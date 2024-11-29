@@ -6,8 +6,8 @@
 
 ![Build Passing](https://img.shields.io/badge/build-passing-success?style=flat-square)
 ![Flutter](https://img.shields.io/badge/Flutter-v3.10-blue?style=flat-square)
-[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](#contributing)
-[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/your-repo/pot-hole-detector?logo=law&logoColor=white)](#license)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/alienx5499/PotHoleDetector/blob/main/CONTRIBUTING.md)
+[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/pothole-detector?logo=law&logoColor=white)](https://github.com/alienx5499/PotHoleDetector/blob/main/LICENSE)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-brightgreen?style=flat-square)
 ![Twitter Integration](https://img.shields.io/badge/social%20media-Twitter-blue?style=flat-square)
 
@@ -31,9 +31,11 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
 2. [🛠️ Tech Stack](#️-tech-stack)
 3. [📸 Screenshots](#-screenshots)
 4. [⚙️ Setup Instructions](#️-setup-instructions)
-5. [🎯 Target Audience](#-target-audience)
-6. [🤝 Contributing](#-contributing)
-7. [📜 License](#-license)
+5. [🚨 Resource Warning](#-resource-warning)
+6. [🎯 Target Audience](#-target-audience)
+7. [🤝 Contributing](#-contributing)
+8. [🌟 Awesome Contributors](#-awesome-contributors)
+9. [📜 License](#-license)
 
 ---
 
@@ -63,10 +65,10 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
 
 ## **🛠️ Tech Stack**
 
-### **Framework and Tools**
+### 🌐 **Frameworks and Tools**
 - **Frontend**: Flutter (Dart)
 - **State Management**: Provider or Riverpod
-- **Mobile Platforms**: Android and iOS
+- **Platforms**: Android and iOS
 
 ### **APIs and Libraries**
 - **Geolocation**: `geolocator` for GPS coordinates.
@@ -74,9 +76,6 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
 - **Image Capture**: Flutter Camera Plugin (`camera` package).
 - **Social Media Integration**: Twitter API for posting.
 - **Persistent Storage**: `shared_preferences` or SQLite for storing user data and report history.
-
-### **Backend (Optional for Advanced Features)**
-- A lightweight backend for managing report statuses and analytics (e.g., Firebase).
 
 ---
 
@@ -89,23 +88,20 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/pot-hole-detector.git
+   git clone https://github.com/alienx5499/PotHoleDetector.git
    ```
-
 2. **Navigate to the Project Directory**
    ```bash
-   cd pot-hole-detector
+   cd PotHoleDetector
    ```
-
 3. **Install Dependencies**
    ```bash
    flutter pub get
    ```
-
 4. **Set Up APIs**
-   - Get API keys for:
-     - **Google Maps API** for geolocation.
-     - **Twitter API** for posting reports.
+   - Obtain API keys for:
+     - **Google Maps API** (geolocation and address lookup).
+     - **Twitter API** (posting reports).
    - Add these keys to the `lib/config/api_keys.dart` file.
 
 5. **Run the Application**
@@ -121,12 +117,22 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
 
 ---
 
+## **🚨 Resource Warning**
+
+This project involves API calls and real-time geolocation processing, which may consume significant device resources. If your device has limited capabilities, ensure:
+- Efficient memory management in the application.
+- Using fewer API requests during testing phases.
+
+Alternatively, test on high-performance devices for better results.
+
+---
+
 ## **🎯 Target Audience**
 
 1. **Commuters**: Easily report road hazards and improve safety.
 2. **Local Authorities**: Gain better insights into road conditions.
-3. **Environmentalists and Activists**: Leverage social media to raise awareness about infrastructure issues.
-4. **Developers and Researchers**: Contribute to or expand the app’s functionality.
+3. **Activists and Environmentalists**: Leverage social media to raise awareness about infrastructure issues.
+4. **Developers**: Expand the repository with new features or APIs.
 
 ---
 
@@ -146,6 +152,19 @@ We ❤️ open source! Contributions are welcome to make this project even bette
 
 ---
 
+## <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f31f/512.webp" width="35" height="30"> Awesome Contributors
+
+<div align="center">
+	<h3>Thank you for contributing to our repository</h3><br>
+	<p align="center">
+		<a href="https://github.com/alienx5499/PotHoleDetector/contributors">
+			<img src="https://contrib.rocks/image?repo=alienx5499/PotHoleDetector" width="90" height="45" />
+		</a>
+	</p>
+</div>
+
+---
+
 ## **📜 License**
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
@@ -155,7 +174,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 <div align="center">
 
 ### 📬 **Feedback & Suggestions**
-*We value your input! Share your thoughts through [GitHub Issues](https://github.com/your-username/pot-hole-detector/issues).*
+*We value your input! Share your thoughts through [GitHub Issues](https://github.com/alienx5499/PotHoleDetector/issues).*
 
 
 💡 *Let's work together to improve road safety and awareness!*
