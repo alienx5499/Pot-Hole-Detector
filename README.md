@@ -165,7 +165,7 @@ We ❤️ open source! Contributions are welcome to make this project even bette
 	<h3>Thank you for contributing to our repository</h3><br>
 	<p align="center">
 		<a href="https://github.com/alienx5499/PotHoleDetector/contributors">
-			<img src="https://contrib.rocks/image?repo=alienx5499/PotHoleDetector" width="90" height="45" />
+			<img src="https://contrib.rocks/image?repo=alienx5499/Pot-Hole-Detector" width="90" height="45" />
 		</a>
 	</p>
 </div>
@@ -181,7 +181,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 <div align="center">
 
 ### 📬 **Feedback & Suggestions**
-*We value your input! Share your thoughts through [GitHub Issues](https://github.com/alienx5499/PotHoleDetector/issues).*
+*We value your input! Share your thoughts through [GitHub Issues](https://github.com/alienx5499/Pot-Hole-Detector/issues).*
 
 
 💡 *Let's work together to improve road safety and awareness!*
