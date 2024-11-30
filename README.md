@@ -6,8 +6,8 @@
 
 ![Build Passing](https://img.shields.io/badge/build-passing-success?style=flat-square)
 ![Node.js](https://img.shields.io/badge/Node.js-v16.10.0-green?style=flat-square)
-[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/alienx5499/PotHoleDetector/blob/main/CONTRIBUTING.md)
-[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/Pot-Hole-Detector?logo=law&logoColor=white)](https://github.com/alienx5499/PotHoleDetector/blob/main/LICENSE)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/alienx5499/Pot-Hole-Detector/blob/main/CONTRIBUTING.md)
+[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/Pot-Hole-Detector?logo=law&logoColor=white)](https://github.com/alienx5499/Pot-Hole-Detector/blob/main/LICENSE)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-brightgreen?style=flat-square)
 ![Twitter Integration](https://img.shields.io/badge/social%20media-Twitter-blue?style=flat-square)
 ![Views](https://hits.dwyl.com/alienx5499/Pot-Hole-Detector.svg)
@@ -93,11 +93,11 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/alienx5499/PotHoleDetector.git
+   git clone https://github.com/alienx5499/Pot-Hole-Detector.git
    ```
 2. **Navigate to the Project Directory**
    ```bash
-   cd PotHoleDetector
+   cd Pot-Hole-Detector
    ```
 3. **Install Dependencies**
    ```bash
@@ -164,7 +164,7 @@ We ❤️ open source! Contributions are welcome to make this project even bette
 <div align="center">
 	<h3>Thank you for contributing to our repository</h3><br>
 	<p align="center">
-		<a href="https://github.com/alienx5499/PotHoleDetector/contributors">
+		<a href="https://github.com/alienx5499/Pot-Hole-Detector/contributors">
 			<img src="https://contrib.rocks/image?repo=alienx5499/Pot-Hole-Detector" width="90" height="45" />
 		</a>
 	</p>
