@@ -5,7 +5,7 @@
 ### *Empowering citizens to report potholes and raise awareness*
 
 ![Build Passing](https://img.shields.io/badge/build-passing-success?style=flat-square)
-![Flutter](https://img.shields.io/badge/Flutter-v3.10-blue?style=flat-square)
+![Node.js](https://img.shields.io/badge/Node.js-v16.10.0-green?style=flat-square)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/alienx5499/PotHoleDetector/blob/main/CONTRIBUTING.md)
 [![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/Pot-Hole-Detector?logo=law&logoColor=white)](https://github.com/alienx5499/PotHoleDetector/blob/main/LICENSE)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-brightgreen?style=flat-square)
@@ -24,7 +24,7 @@
 
 ## **📱 What is Pot Hole Detector?**
 
-The **Pot Hole Detector** is a mobile application built using **Flutter** that enables users to:
+The **Pot Hole Detector** is a web application built using **Node.js** that enables users to:
 - Capture and report potholes with precise location tagging.
 - Automatically share pothole information on **Twitter** to raise awareness.
 - Keep track of reported potholes in a user-friendly dashboard.
@@ -49,8 +49,8 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
 ## **✨ Features**  
 
 ### **Image Capture**
-- Capture clear images of potholes with an in-app camera.
-- **Image Clarity Verification**: Prompt users for a retake if the image is blurry or unclear.
+- Capture clear images of potholes through user uploads.
+- **Image Clarity Verification**: Prompt users for a re-upload if the image is blurry or unclear.
 
 ### **Location Tagging**
 - **GPS Auto-Tagging**: Automatically fetch and tag the pothole's GPS coordinates.
@@ -72,17 +72,15 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
 
 ## **🛠️ Tech Stack**
 
-### 🌐 **Frameworks and Tools**
-- **Frontend**: Flutter (Dart)
-- **State Management**: Provider or Riverpod
-- **Platforms**: Android and iOS
+### 🌐 **Backend Technologies**
+- **Backend Framework**: Node.js with Express.js
+- **Database**: MongoDB
+- **Image Storage**: Cloudinary or Amazon S3
+- **Geolocation**: Google Maps API for GPS and address lookup
+- **Social Media Integration**: Twitter API for posting
 
-### **APIs and Libraries**
-- **Geolocation**: `geolocator` for GPS coordinates.
-- **Google Maps API**: For address conversion and map integration.
-- **Image Capture**: Flutter Camera Plugin (`camera` package).
-- **Social Media Integration**: Twitter API for posting.
-- **Persistent Storage**: `shared_preferences` or SQLite for storing user data and report history.
+### **Frontend Framework**
+- React.js or any preferred frontend framework for building the dashboard and user interface.
 
 ---
 
@@ -103,34 +101,36 @@ The **Pot Hole Detector** is a mobile application built using **Flutter** that e
    ```
 3. **Install Dependencies**
    ```bash
-   flutter pub get
+   npm install
    ```
 4. **Set Up APIs**
    - Obtain API keys for:
      - **Google Maps API** (geolocation and address lookup).
      - **Twitter API** (posting reports).
-   - Add these keys to the `lib/config/api_keys.dart` file.
+   - Add these keys to a `.env` file:
+     ```plaintext
+     GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+     TWITTER_API_KEY=your_twitter_api_key
+     TWITTER_API_SECRET=your_twitter_api_secret
+     ```
 
 5. **Run the Application**
    ```bash
-   flutter run
+   npm start
    ```
 
 6. **Build for Production**
-   ```bash
-   flutter build apk   # For Android
-   flutter build ios   # For iOS
-   ```
+   Use a deployment service like Heroku, AWS, or Vercel for hosting.
 
 ---
 
 ## **🚨 Resource Warning**
 
-This project involves API calls and real-time geolocation processing, which may consume significant device resources. If your device has limited capabilities, ensure:
-- Efficient memory management in the application.
-- Using fewer API requests during testing phases.
+This project involves API calls and real-time geolocation processing, which may consume significant server resources. If your server has limited capabilities, ensure:
+- Efficient caching mechanisms for frequently used API responses.
+- Testing with smaller datasets during the development phase.
 
-Alternatively, test on high-performance devices for better results.
+Alternatively, use mock data during initial development to simulate production behavior.
 
 ---
 
