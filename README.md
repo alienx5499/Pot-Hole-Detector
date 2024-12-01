@@ -1,4 +1,3 @@
-
 <div align="center">
 
 # 🌟 **Pot Hole Detector** 🌟  
