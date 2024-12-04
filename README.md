@@ -90,12 +90,22 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ## **⚙️ Setup Instructions**
 
+### Prerequisites
+- **Node.js** (v16.10.0 or higher)
+- **Expo CLI**: Install globally using `npm install -g expo-cli`
+- **Git**: For version control
+- **API Keys**:
+  - **Google Maps API**: For geolocation and address lookup
+  - **Twitter API**: For posting reports
+  - **Cloudinary/Amazon S3**: For image storage
+
 1. **Clone the Repository**
    ```bash
    git clone https://github.com/alienx5499/Pot-Hole-Detector.git
    ```
 2. **Navigate to the Project Directory**
    ```bash
+   cd Pot-Hole-Detector
    cd Pot-Hole-Detector
    ```
 3. **Install Dependencies**
@@ -112,15 +122,28 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
      TWITTER_API_KEY=your_twitter_api_key
      TWITTER_API_SECRET=your_twitter_api_secret
      ```
+5. **Configure Expo**
+   Ensure that your app.json or app.config.js is set up correctly with necessary permissions for location and camera access.
 
-5. **Run the Application**
+6. **Run the Application**
    ```bash
-   npm start
+   expo start
+   ```
+   - **For iOS:** Press i to open in the iOS simulator.
+   - **For Android:** Press a to open in the Android emulator.
+   - **On Physical Devices:** Use the Expo Go app to scan the QR code.
+   
+
+7. **Build for Production**
+   Use Expo’s build service to create standalone builds:
+   ```bash
+   expo build:android
+   expo build:ios
    ```
 
-6. **Build for Production**
-   Use a deployment service like Heroku, AWS, or Vercel for hosting.
-
+8. **Deployment**
+   Deploy the backend server using platforms like Heroku, AWS, or DigitalOcean. For the mobile app, publish to Google Play Store and Apple App Store.
+   
 ---
 
 ## **🚨 Resource Warning**
