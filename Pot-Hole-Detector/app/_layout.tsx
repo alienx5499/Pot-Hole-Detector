@@ -1,14 +1,9 @@
-// layout.tsx
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
+import React from "react";
 
-export default function Layout() {
-  return (
-    <Stack
-      initialRouteName="index"
-      screenOptions={{
-        headerShown: true,
-        headerTitleAlign: 'center',
-      }}
-    />
-  );
+export default function RootLayout() {
+  return <Stack >
+    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack.Screen name="maps" options={{ headerShown: false  }} />  
+  </Stack>;
 }
