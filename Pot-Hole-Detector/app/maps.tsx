@@ -19,7 +19,6 @@ import MapView, { PROVIDER_GOOGLE, Marker, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg';
@@ -33,7 +32,7 @@ const Maps = () => {
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const mapsRef = useRef<MapView>(null);
 
@@ -146,6 +145,33 @@ const Maps = () => {
     }, 2000); // Duration matches animation length
   };
 
+ const currentLocation = async () => {
+   try {
+     // Display loading indicator
+     setLoading(true);
+
+     const currentLocation = await Location.getCurrentPositionAsync({
+       accuracy: Location.Accuracy.Highest,
+     });
+
+     // Update region to current location
+     setRegion({
+       latitude: currentLocation.coords.latitude,
+       longitude: currentLocation.coords.longitude,
+       latitudeDelta: 0.05,
+       longitudeDelta: 0.05,
+     });
+     mapsRef.current?.animateToRegion(region, 1000);
+ 
+     // Dismiss the loading indicator
+     setSearchQuery('');
+     setLoading(false);
+   } catch (error) {
+     Alert.alert('Error', error.message);
+     setLoading(false);
+   }
+ };
+ 
   return (
     <View style={styles.container}>
       {loading ? (
@@ -159,15 +185,37 @@ const Maps = () => {
             provider={PROVIDER_GOOGLE}
             style={styles.map}
             ref={mapsRef}
-            showsUserLocation={true}
+            showsUserLocation={false}
+            showsMyLocationButton={false}
             followsUserLocation={true}
             initialRegion={region}
+            camera={
+              {
+                center: {
+                  latitude: region.latitude,
+                  longitude: region.longitude,
+                },
+                pitch: 45,
+                heading: 90,
+                zoom: 20,
+              }
+            }
+            mapType='satellite'
           >
             <Marker
               coordinate={{ latitude: region.latitude, longitude: region.longitude }}
-              title="Pothole Detected"
-              description={address}
+              title="Pothole Location"
+              // description={address}
               pinColor="#FF6347" // Tomato color for visibility
+              draggable
+              onDragEnd={(e) => {
+                setRegion({
+                  latitude: e.nativeEvent.coordinate.latitude,
+                  longitude: e.nativeEvent.coordinate.longitude,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                });
+              }}
             />
           </MapView>
 
@@ -182,6 +230,7 @@ const Maps = () => {
               onSubmitEditing={searchPlace}
               returnKeyType="search"
             />
+           
             {searchQuery.trim() ? (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
                 <Ionicons name="close-circle" size={20} color="#333" style={styles.clearIcon} />
@@ -192,9 +241,7 @@ const Maps = () => {
           {/* Current Location Button */}
           <TouchableOpacity
             style={styles.currentLocationButton}
-            onPress={() => {
-              mapsRef.current?.animateToRegion(region, 1000);
-            }}
+            onPress={currentLocation}
             accessibilityLabel="Use current location"
           >
             <Ionicons name="locate-outline" size={24} color="#fff" />
@@ -257,7 +304,7 @@ const styles = StyleSheet.create({
     color: '#1E90FF',
   },
   map: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   searchContainer: {
     position: 'absolute',
