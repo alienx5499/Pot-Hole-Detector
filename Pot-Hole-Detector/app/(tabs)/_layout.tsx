@@ -1,12 +1,12 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import React from "react";
 import { Image, StyleSheet } from "react-native";
 
-export default function Layout() {
+export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        // general tabbar styling
         tabBarShowLabel: true,
         tabBarStyle: {
           backgroundColor: "#fff",
@@ -76,6 +76,6 @@ export default function Layout() {
 
 const styles = StyleSheet.create({
   icon: {
-    // add any icon styling if needed later
+    // addl icon styling if ndd
   },
 });

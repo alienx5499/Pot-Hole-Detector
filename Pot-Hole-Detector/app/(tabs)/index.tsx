@@ -1,96 +1,152 @@
-// app/(tabs)/index.tsx
+import React from "react";
+import { Text, View, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { useNavigation } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
-// imp req comps
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-
-// home comp main
-export default function Home() {
-  const router = useRouter(); // nav hook
+export default function Index() {
+  const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
-      {/* hdr sec */}
-      <LinearGradient colors={['#FF7E5F', '#FEB47B']} style={styles.header}>
-        <Ionicons name="ios-home" size={100} color="#fff" />
-        <Text style={styles.title}>pot-hole-detector</Text>
-      </LinearGradient>
+    <LinearGradient
+      // gradient
+      colors={["#0f2027", "#203a43", "#2c5364"]}
+      style={styles.gradientContainer}
+    >
+      <View style={styles.container}>
+        <Image
+          source={require('../../assets/images/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
-      {/* btns nav sec */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/camera')}
-        >
-          <Ionicons name="camera-outline" size={30} color="#fff" />
-          <Text style={styles.buttonText}>detect pothole</Text>
-        </TouchableOpacity>
+        <View style={styles.contentCard}>
+          <Text style={styles.title}>Pot-Hole-Detector</Text>
+          <Text style={styles.tagline}>Empowering Safer Roads</Text>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/dashboard')}
-        >
-          <Ionicons name="stats-chart-outline" size={30} color="#fff" />
-          <Text style={styles.buttonText}>view dash</Text>
-        </TouchableOpacity>
+          <Text style={styles.description}>
+            Quickly identify and report road imperfections. Take a photo,
+            help pave the way to safer, smoother journeys, and make a difference
+            in your community.
+          </Text>
+
+          {/* Take a Photo Button */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.ctaButtonContainer}
+            onPress={() => navigation.navigate("camera")}
+          >
+            <LinearGradient
+              colors={["#ffd200", "#ffa300"]}
+              style={styles.ctaButton}
+            >
+              <Text style={styles.ctaButtonText}>Take a Photo</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* View Dashboard Button */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.ctaButtonContainer}
+            onPress={() => navigation.navigate("dashboard")}
+          >
+            <LinearGradient
+              colors={["#ffd200", "#ffa300"]}
+              style={styles.ctaButton}
+            >
+              <Text style={styles.ctaButtonText}>View Dashboard</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.footer}>Together, let's improve our roads.</Text>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
-// styles sec
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#EFEFEF',
-    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 40,
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
-  header: {
-    width: '100%',
-    padding: 40,
-    borderRadius: 16,
-    alignItems: 'center',
+  logo: {
+    width: 100,
+    height: 100,
     marginBottom: 30,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 5,
+  },
+  contentCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 20,
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    width: "100%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    marginBottom: 30,
   },
   title: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: '700',
-    marginTop: 10,
-    textAlign: 'center',
-    textTransform: 'uppercase',
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 4,
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
   },
-  buttonsContainer: {
-    width: '100%',
-  },
-  button: {
-    flexDirection: 'row',
-    backgroundColor: '#FF7E5F',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    alignItems: 'center',
+  tagline: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#f0f0f0",
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 5,
+    textAlign: "center",
   },
-  buttonText: {
-    color: '#fff',
+  description: {
+    fontSize: 15,
+    color: "#f0f0f0",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 40,
+  },
+  ctaButtonContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginTop: 10, // Space between buttons
+  },
+  ctaButton: {
+    borderRadius: 30,
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    elevation: 3,
+    width: "70%",
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaButtonText: {
+    color: "#1E3C72",
     fontSize: 18,
-    marginLeft: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: "700",
+    textAlign: "center",
+    letterSpacing: 1.1,
+  },
+  footer: {
+    fontSize: 14,
+    color: "#d0d0d0",
+    textAlign: "center",
+    marginTop: "auto",
+    paddingHorizontal: 20,
   },
 });
