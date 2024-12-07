@@ -1,194 +1,208 @@
-import React, { useState,useRef } from 'react';
-import { 
-  View, 
-  TextInput, 
-  StyleSheet ,
+// app/(tabs)/camera.tsx
+
+// imp req comps
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
   TouchableOpacity,
-  Text
+  Image,
+  Alert,
 } from 'react-native';
-import MapView, { PROVIDER_GOOGLE , Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { useEffect } from 'react';
-import { Alert } from 'react-native';
-import { useNavigation } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
+// cam comp main
+export default function Camera() {
+  const [image, setImage] = useState<string | null>(null); // state for img
+  const router = useRouter(); // nav hook
 
-const key  = 'AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg' 
-
-const maps = () => {
-  const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [region, setRegion] = useState(
-    {
-      latitude: 12.9716,
-      longitude: 77.5946,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421
+  // fun to req cam perm
+  const requestCameraPermission = async (): Promise<boolean> => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'perm denied',
+        'cam perm is needed to take photos.',
+        [{ text: 'ok' }]
+      );
+      return false;
     }
-  );
- const [markers, setMarkers] = useState({
-   latitude: 12.9716,
-   longitude: 77.5946
- });
-  const [address, setAddress] = useState('');
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission to access location was denied');
-      } else {
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Highest,
-          
-        });
-        setRegion({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        });     
+    return true;
+  };
+
+  // fun to launch cam
+  const takePhoto = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaType.Images, // img only
+        allowsEditing: true, // crop opt
+        aspect: [4, 3], // img aspect
+        quality: 1, // max qual
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        setImage(result.assets[0].uri); // set img uri
       }
-    })();
-  }, []);
-  const mapsRef = useRef(null);
-  const getAddress = async ()=>{
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${region.latitude},${region.longitude}&key=${key}`;
-      fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        const address = data.results[0].formatted_address;
-       setAddress(address);
-      })
-      .catch(error => Alert.alert('Error', error.message));
-  }
+    } catch (error) {
+      Alert.alert('error', 'err occurred while taking the photo.', [
+        { text: 'ok' },
+      ]);
+    }
+  };
 
-  useEffect(() => {
-    getAddress();
-  }, [region]);
-  
+  // fun to retake img
+  const retakePhoto = () => {
+    setImage(null); // clear img
+  };
 
-
-  const searchPlace = async()=>{
-    //TODO
-  }
-const handleSubmit = async () => {
-    console.log('called');
-    navigation.navigate('(tabs)', {screen: 'index'});
-    
-    
-    
-}
+  // fun to conf and nav with img
+  const confirmPhoto = () => {
+    if (image) {
+      router.push('/maps', { imageUri: image }); // nav with img
+    } else {
+      Alert.alert('no img', 'pls take a photo bfr proc', [
+        { text: 'ok' },
+      ]);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <MapView
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        followsUserLocation={true}
-        showsMyLocationButton={false}
-        ref={mapsRef}
-        showsUserLocation={true}
-        initialRegion={region}
-      >
-      </MapView>
-      
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search location"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-      <View>    
+      {!image ? (
+        <>
+          {/* hdr sec */}
+          <LinearGradient colors={['#FF7E5F', '#FEB47B']} style={styles.header}>
+            <Ionicons name="camera" size={100} color="#fff" />
+            <Text style={styles.title}>capture pothole</Text>
+          </LinearGradient>
 
-      </View>
-      <TouchableOpacity style={styles.currentLocationButton} onPress={()=>{mapsRef.current.animateCamera({center: {latitude: region.latitude, longitude: region.longitude}})}}><Text>use current location</Text></TouchableOpacity>
-      <View style={styles.bottomBox}>
-    <Text style={styles.addressText}>{address}</Text>
-    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-      <Text style={styles.submitButtonText}>Submit</Text>
-    </TouchableOpacity>
-  </View>
+          {/* cap btn */}
+          <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
+            <Ionicons name="camera-outline" size={30} color="#fff" />
+            <Text style={styles.captureButtonText}>take photo</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          {/* img prev */}
+          <Image source={{ uri: image }} style={styles.previewImage} />
+
+          <View style={styles.buttonContainer}>
+            {/* retake btn */}
+            <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
+              <Ionicons name="refresh-circle-outline" size={24} color="#fff" />
+              <Text style={styles.buttonText}>retake</Text>
+            </TouchableOpacity>
+
+            {/* conf btn */}
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={confirmPhoto}
+            >
+              <Ionicons name="checkmark-circle-outline" size={24} color="#fff" />
+              <Text style={styles.buttonText}>confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </View>
   );
-};
+}
 
+// styles sec
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  searchContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
+    backgroundColor: '#EFEFEF',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  searchIcon: {
-    marginLeft: 10,
-  },
-  searchInput: {
-    flex: 1,
-    height: 50,
-    paddingHorizontal: 10,
-  },
-  addressText: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  submitButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 10,
-    padding: 10,
-    width: '80%',
-    position:'absolute',
-    bottom:10,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  bottomBox: {
-    position: 'absolute',
-    bottom: 0,
-    height: 180,
-    width: '100%',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     padding: 20,
-    alignItems:'center',
   },
-  currentLocationButton: {
-    position: 'absolute',
-    bottom: 200,
-    right: 130,
-    backgroundColor: '#007bff',
-    borderRadius: 10,
-    padding: 10,
-    elevation: 3,
+  header: {
+    width: '100%',
+    padding: 40,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 30,
     shadowColor: '#000',
+    shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: '700',
+    marginTop: 10,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
+  captureButton: {
+    flexDirection: 'row',
+    backgroundColor: '#FF7E5F',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  captureButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    marginLeft: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  previewImage: {
+    width: '100%',
+    height: '60%',
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  retakeButton: {
+    flexDirection: 'row',
+    backgroundColor: '#FFA500',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 30,
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+    justifyContent: 'center',
+  },
+  confirmButton: {
+    flexDirection: 'row',
+    backgroundColor: '#32CD32',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 30,
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 10,
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 8,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
 });
-
-export default maps;
