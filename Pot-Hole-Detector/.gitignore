@@ -1,15 +1,21 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Git Ignore File for Pot-Hole-Detector Project
 
-# dependencies
+# --------------------------------------
+# Dependencies
+# --------------------------------------
 node_modules/
 
-# Expo
+# --------------------------------------
+# Expo Specific Files
+# --------------------------------------
 .expo/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# --------------------------------------
+# Native Build Files
+# --------------------------------------
 *.orig.*
 *.jks
 *.p8
@@ -17,23 +23,41 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
-# Metro
+# --------------------------------------
+# Metro Bundler Files
+# --------------------------------------
 .metro-health-check*
 
-# debug
+# --------------------------------------
+# Debug Logs
+# --------------------------------------
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
+# --------------------------------------
+# macOS System Files
+# --------------------------------------
 .DS_Store
 *.pem
 
-# local env files
+# --------------------------------------
+# Local Environment Files
+# --------------------------------------
 .env*.local
 
-# typescript
+# --------------------------------------
+# TypeScript Build Files
+# --------------------------------------
 *.tsbuildinfo
 
+# --------------------------------------
+# Project Specific Files
+# --------------------------------------
 app-example
 bun.lockb
+
+# --------------------------------------
+# IDE Files
+# --------------------------------------
+.idea/
