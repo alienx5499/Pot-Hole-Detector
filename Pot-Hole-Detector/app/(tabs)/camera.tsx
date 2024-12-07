@@ -1,9 +1,6 @@
-// app/(tabs)/camera.tsx
-
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
-  Button,
   Image,
   StyleSheet,
   Text,
@@ -15,19 +12,27 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system';
+import axios from 'axios';
+
+// Roboflow API Config
+const API_URL = "https://detect.roboflow.com/potholes-detection-qwkkc/5";
+const API_KEY = "06CdohBqfvMermFXu3tL";
 
 export default function Camera() {
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const navigation = useNavigation();
 
-  // fun to req cam permission
-  const requestCameraPermission = async (): Promise<boolean> => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
+  // Request Camera and Media Permissions
+  const requestPermissions = async (): Promise<boolean> => {
+    const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+    const mediaStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (cameraStatus.status !== 'granted' || mediaStatus.status !== 'granted') {
       Alert.alert(
-        'Camera Permission',
-        'Permission to access the camera is required to detect potholes.',
+        'Permissions Required',
+        'Camera and Media Library access is required to detect potholes.',
         [{ text: 'OK' }]
       );
       return false;
@@ -35,9 +40,9 @@ export default function Camera() {
     return true;
   };
 
-  // fun to launch cam
+  // Launch Camera
   const takePhoto = async () => {
-    const hasPermission = await requestCameraPermission();
+    const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
     try {
@@ -52,25 +57,90 @@ export default function Camera() {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while taking the photo.', [
-        { text: 'OK' },
-      ]);
+      Alert.alert('Error', 'An error occurred while taking the photo.', [{ text: 'OK' }]);
     }
   };
 
-  // fun for photo retake
+  // Pick Image from Media Library
+  const pickImageFromGallery = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while selecting the image.', [{ text: 'OK' }]);
+    }
+  };
+
+  // Retake Photo
   const retakePhoto = () => {
     setImage(null);
   };
 
-  // fun to confirm and nav with the conf img
-  const confirmPhoto = () => {
-    if (image) {
-      navigation.navigate('maps', { imageUri: image });
-    } else {
-      Alert.alert('No Image', 'Please take a photo before proceeding.', [
-        { text: 'OK' },
-      ]);
+  // Upload and Detect Pothole
+  const detectPothole = async () => {
+    if (!image) {
+      Alert.alert('No Image', 'Please select or take a photo before proceeding.', [{ text: 'OK' }]);
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Convert image to Base64
+      const base64Image = await FileSystem.readAsStringAsync(image, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Send image to Roboflow API using Axios
+      const response = await axios({
+        method: "POST",
+        url: API_URL,
+        params: {
+          api_key: API_KEY,
+        },
+        data: `data:image/jpeg;base64,${base64Image}`,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      const result = response.data;
+
+      if (result.predictions && result.predictions.length > 0) {
+        const highestConfidence = Math.max(
+          ...result.predictions.map((p) => p.confidence * 100)
+        );
+
+        if (highestConfidence > 50) {
+          Alert.alert(
+            "Detection Approved",
+            `Pothole detected with confidence ${highestConfidence.toFixed(2)}%.`,
+            [{ text: "OK" }]
+          );
+
+          // Navigate to maps with result data
+          navigation.navigate('maps', { imageUri: image, result });
+        } else {
+          Alert.alert("No Potholes Detected", "Detection confidence is below 50%.", [{ text: "OK" }]);
+        }
+      } else {
+        Alert.alert("No Potholes Detected", "No potholes were detected.", [{ text: "OK" }]);
+      }
+    } catch (error: any) {
+      Alert.alert("Error", `Detection failed: ${error.message}`, [{ text: "OK" }]);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -80,12 +150,20 @@ export default function Camera() {
         <>
           <LinearGradient colors={['#FF7E5F', '#FEB47B']} style={styles.header}>
             <Ionicons name="camera" size={100} color="#fff" />
-            <Text style={styles.title}>Capture Pothole</Text>
+            <Text style={styles.title}>Capture or Select Pothole</Text>
           </LinearGradient>
-          <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-            <Ionicons name="camera-outline" size={30} color="#fff" />
-            <Text style={styles.captureButtonText}>Take Photo</Text>
-          </TouchableOpacity>
+
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
+              <Ionicons name="camera-outline" size={30} color="#fff" />
+              <Text style={styles.captureButtonText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.galleryButton} onPress={pickImageFromGallery}>
+              <Ionicons name="image-outline" size={30} color="#fff" />
+              <Text style={styles.captureButtonText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+          </View>
         </>
       ) : (
         <>
@@ -95,13 +173,15 @@ export default function Camera() {
               <Ionicons name="refresh-circle-outline" size={24} color="#fff" />
               <Text style={styles.buttonText}>Retake</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.confirmButton} onPress={confirmPhoto}>
+
+            <TouchableOpacity style={styles.confirmButton} onPress={detectPothole}>
               <Ionicons name="checkmark-circle-outline" size={24} color="#fff" />
               <Text style={styles.buttonText}>Confirm</Text>
             </TouchableOpacity>
           </View>
         </>
       )}
+
       {uploading && (
         <View style={styles.uploadingContainer}>
           <ActivityIndicator size="large" color="#FF7E5F" />
@@ -138,24 +218,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 10,
   },
-  captureButton: {
+  actionButtons: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  captureButton: {
     backgroundColor: '#FF7E5F',
     paddingVertical: 15,
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
     borderRadius: 30,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 5,
   },
-  captureButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    marginLeft: 10,
-    fontWeight: '600',
+  galleryButton: {
+    backgroundColor: '#FEB47B',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    alignItems: 'center',
   },
   previewImage: {
     width: '100%',
@@ -169,26 +249,18 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   retakeButton: {
-    flexDirection: 'row',
-    backgroundColor: '#FFA500',
+    backgroundColor: '#FFA500', // Orange
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 30,
     alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-    justifyContent: 'center',
   },
   confirmButton: {
-    flexDirection: 'row',
-    backgroundColor: '#32CD32',
+    backgroundColor: '#32CD32', // Green
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 30,
     alignItems: 'center',
-    flex: 1,
-    marginLeft: 10,
-    justifyContent: 'center',
   },
   buttonText: {
     color: '#fff',
@@ -198,11 +270,6 @@ const styles = StyleSheet.create({
   },
   uploadingContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(239, 239, 239, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
