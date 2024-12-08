@@ -1,44 +1,30 @@
-// app/(tabs)/camera.tsx
-
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, StyleSheet, Text, TouchableOpacity, Alert, Dimensions, Animated } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system';
 import axios from 'axios';
-import LottieView from 'lottie-react-native'; // Import LottieView
-import processingAnimation from '../../assets/animations/processing.json'; // Import processing animation
-import camLoaderAnimation from '../../assets/animations/cameraLoader.json'; // Import camera loader animation
 
-// Import Environment Variables
-import { ROBOFLOW_API_URL, ROBOFLOW_API_KEY } from '@env';
-
-const { width, height } = Dimensions.get('window');
+// Roboflow API Config
+const API_URL = "https://detect.roboflow.com/potholes-detection-qwkkc/5";
+const API_KEY = "06CdohBqfvMermFXu3tL";
 
 export default function Camera() {
-  const [isLoading, setIsLoading] = useState(true); // Loading state for splash
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
-  const [isProcessing, setIsProcessing] = useState(false); // State to control the loader visibility
   const navigation = useNavigation();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    // Simulate loading duration equal to animation's length
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
-    }, 1500); // Adjust this duration based on your animation
-
-    return () => clearTimeout(timer);
-  }, []);
-
+  // Request Camera and Media Permissions
   const requestPermissions = async (): Promise<boolean> => {
     const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
     const mediaStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -54,16 +40,16 @@ export default function Camera() {
     return true;
   };
 
+  // Launch Camera
   const takePhoto = async () => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
+        mediaTypes:['images'],
         allowsEditing: true,
         quality: 1,
-        aspect: [4, 3],
       });
 
       if (!result.canceled && result.assets.length > 0) {
@@ -74,13 +60,14 @@ export default function Camera() {
     }
   };
 
+  // Pick Image from Media Library
   const pickImageFromGallery = async () => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes:['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
@@ -94,29 +81,32 @@ export default function Camera() {
     }
   };
 
+  // Retake Photo
   const retakePhoto = () => {
     setImage(null);
   };
 
+  // Upload and Detect Pothole
   const detectPothole = async () => {
     if (!image) {
       Alert.alert('No Image', 'Please select or take a photo before proceeding.', [{ text: 'OK' }]);
       return;
     }
 
-    setIsProcessing(true); // Show loader when processing starts
-    setUploading(true); // Indicate uploading state
+    setUploading(true);
 
     try {
+      // Convert image to Base64
       const base64Image = await FileSystem.readAsStringAsync(image, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
+      // Send image to Roboflow API using Axios
       const response = await axios({
         method: "POST",
-        url: ROBOFLOW_API_URL,
+        url: API_URL,
         params: {
-          api_key: ROBOFLOW_API_KEY,
+          api_key: API_KEY,
         },
         data: `data:image/jpeg;base64,${base64Image}`,
         headers: {
@@ -128,7 +118,7 @@ export default function Camera() {
 
       if (result.predictions && result.predictions.length > 0) {
         const highestConfidence = Math.max(
-          ...result.predictions.map((p: any) => p.confidence * 100)
+          ...result.predictions.map((p) => p.confidence * 100)
         );
 
         if (highestConfidence > 50) {
@@ -138,6 +128,7 @@ export default function Camera() {
             [{ text: "OK" }]
           );
 
+          // Navigate to maps with result data
           navigation.navigate('maps', { imageUri: image, result });
         } else {
           Alert.alert("No Potholes Detected", "Detection confidence is below 50%.", [{ text: "OK" }]);
@@ -148,45 +139,33 @@ export default function Camera() {
     } catch (error: any) {
       Alert.alert("Error", `Detection failed: ${error.message}`, [{ text: "OK" }]);
     } finally {
-      setUploading(false); // Hide uploading state
-      setIsProcessing(false); // Hide loader once processing is done
+      setUploading(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <View style={[styles.splashContainer, { backgroundColor: '#fff' }]}>
-        <LottieView
-          source={camLoaderAnimation} // Show initial loading animation
-          autoPlay
-          loop
-          style={styles.lottie}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <Animated.View style={{ ...styles.header, opacity: fadeAnim }}>
-        <Ionicons name="camera" size={100} color="#fff" />
-        <Text style={styles.title}>Capture or Select Pothole</Text>
-      </Animated.View>
-
       {!image ? (
-        <Animated.View style={{ ...styles.actionButtons, opacity: fadeAnim }}>
-          <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-            <Ionicons name="camera-outline" size={30} color="#fff" />
-            <Text style={styles.captureButtonText}>Take Photo</Text>
-          </TouchableOpacity>
+        <>
+          <LinearGradient colors={['#FF7E5F', '#FEB47B']} style={styles.header}>
+            <Ionicons name="camera" size={100} color="#fff" />
+            <Text style={styles.title}>Capture or Select Pothole</Text>
+          </LinearGradient>
 
-          <TouchableOpacity style={styles.galleryButton} onPress={pickImageFromGallery}>
-            <Ionicons name="image-outline" size={30} color="#fff" />
-            <Text style={styles.captureButtonText}>Gallery</Text>
-          </TouchableOpacity>
-        </Animated.View>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
+              <Ionicons name="camera-outline" size={30} color="#fff" />
+              <Text style={styles.captureButtonText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.galleryButton} onPress={pickImageFromGallery}>
+              <Ionicons name="image-outline" size={30} color="#fff" />
+              <Text style={styles.captureButtonText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       ) : (
-        <View style={styles.previewContainer}>
+        <>
           <Image source={{ uri: image }} style={styles.previewImage} />
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
@@ -199,17 +178,13 @@ export default function Camera() {
               <Text style={styles.buttonText}>Confirm</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </>
       )}
 
-      {isProcessing && (
-        <View style={styles.uploadingOverlay}>
-          <LottieView
-            source={processingAnimation} // Show processing animation during image processing
-            autoPlay
-            loop
-            style={styles.processingLottie}
-          />
+      {uploading && (
+        <View style={styles.uploadingContainer}>
+          <ActivityIndicator size="large" color="#FF7E5F" />
+          <Text style={styles.uploadingText}>Processing Image...</Text>
         </View>
       )}
     </View>
@@ -217,98 +192,55 @@ export default function Camera() {
 }
 
 const styles = StyleSheet.create({
-  splashContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  lottie: {
-    width: 200,
-    height: 200,
-  },
-  processingLottie: {
-    width: 600,
-    height: 600,
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F7',
+    backgroundColor: '#EFEFEF',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   header: {
     width: '100%',
-    paddingVertical: 30,
-    borderRadius: 20,
+    padding: 40,
+    borderRadius: 16,
     alignItems: 'center',
-    backgroundColor: '#2575fc',
     marginBottom: 30,
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 8,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     color: '#fff',
-    fontWeight: '800',
-    marginTop: 15,
-    textAlign: 'center',
+    fontWeight: '700',
+    marginTop: 10,
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     width: '100%',
   },
   captureButton: {
-    flex: 1,
-    backgroundColor: '#FF6F61',
+    backgroundColor: '#FF7E5F',
     paddingVertical: 15,
-    marginRight: 10,
+    paddingHorizontal: 20,
     borderRadius: 30,
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
   },
   galleryButton: {
-    flex: 1,
-    backgroundColor: '#4CA1AF',
+    backgroundColor: '#FEB47B',
     paddingVertical: 15,
-    marginLeft: 10,
+    paddingHorizontal: 20,
     borderRadius: 30,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  captureButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    marginLeft: 10,
-    fontWeight: '600',
-  },
-  previewContainer: {
-    width: '100%',
     alignItems: 'center',
   },
   previewImage: {
-    width: width * 0.9,
-    height: height * 0.5,
-    borderRadius: 20,
+    width: '100%',
+    height: '60%',
+    borderRadius: 16,
     marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#ddd',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -316,26 +248,18 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   retakeButton: {
-    flex: 1,
-    backgroundColor: '#FF8C00', // Dark Orange
+    backgroundColor: '#FFA500', // Orange
     paddingVertical: 12,
-    marginRight: 10,
+    paddingHorizontal: 25,
     borderRadius: 30,
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    elevation: 3,
   },
   confirmButton: {
-    flex: 1,
-    backgroundColor: '#32CD32', // Lime Green
+    backgroundColor: '#32CD32', // Green
     paddingVertical: 12,
-    marginLeft: 10,
+    paddingHorizontal: 25,
     borderRadius: 30,
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    elevation: 3,
   },
   buttonText: {
     color: '#fff',
@@ -343,20 +267,14 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: '600',
   },
-  uploadingOverlay: {
+  uploadingContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    backgroundColor: 'rgba(240, 244, 247, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   uploadingText: {
-    marginTop: 15,
-    fontSize: 18,
+    marginTop: 10,
+    fontSize: 16,
     color: '#333',
-    fontWeight: '600',
   },
 });

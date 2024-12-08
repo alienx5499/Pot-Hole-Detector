@@ -10,6 +10,7 @@ import {
   Dimensions,
   Keyboard,
   Platform,
+  ActivityIndicator,
   Modal,
   Animated,
   Alert,
@@ -19,7 +20,8 @@ import * as Location from 'expo-location';
 import { useNavigation } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
-import { GOOGLE_MAPS_API_KEY } from '@env'; // Import the API key
+
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg';
 
 const Maps = () => {
   const navigation = useNavigation();
@@ -143,43 +145,38 @@ const Maps = () => {
     }, 2000); // Duration matches animation length
   };
 
-  const currentLocation = async () => {
-    try {
-      // Display loading indicator
-      setLoading(true);
+ const currentLocation = async () => {
+   try {
+     // Display loading indicator
+     setLoading(true);
 
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
+     const currentLocation = await Location.getCurrentPositionAsync({
+       accuracy: Location.Accuracy.Highest,
+     });
 
-      // Update region to current location
-      setRegion({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      });
-      mapsRef.current?.animateToRegion(region, 1000);
-
-      // Dismiss the loading indicator
-      setSearchQuery('');
-      setLoading(false);
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-      setLoading(false);
-    }
-  };
-
+     // Update region to current location
+     setRegion({
+       latitude: currentLocation.coords.latitude,
+       longitude: currentLocation.coords.longitude,
+       latitudeDelta: 0.05,
+       longitudeDelta: 0.05,
+     });
+     mapsRef.current?.animateToRegion(region, 1000);
+ 
+     // Dismiss the loading indicator
+     setSearchQuery('');
+     setLoading(false);
+   } catch (error) {
+     Alert.alert('Error', error.message);
+     setLoading(false);
+   }
+ };
+ 
   return (
     <View style={styles.container}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <LottieView
-            source={require('../assets/animations/cycleLoader.json')} // Ensure correct path
-            autoPlay
-            loop
-            style={styles.loader}
-          />
+          <ActivityIndicator size="large" color="#1E90FF" />
           <Text style={styles.loadingText}>Fetching your location...</Text>
         </View>
       ) : (
@@ -192,16 +189,18 @@ const Maps = () => {
             showsMyLocationButton={false}
             followsUserLocation={true}
             initialRegion={region}
-            camera={{
-              center: {
-                latitude: region.latitude,
-                longitude: region.longitude,
-              },
-              pitch: 45,
-              heading: 90,
-              zoom: 20,
-            }}
-            mapType="satellite"
+            camera={
+              {
+                center: {
+                  latitude: region.latitude,
+                  longitude: region.longitude,
+                },
+                pitch: 45,
+                heading: 90,
+                zoom: 20,
+              }
+            }
+            mapType='satellite'
           >
             <Marker
               coordinate={{ latitude: region.latitude, longitude: region.longitude }}
@@ -231,7 +230,7 @@ const Maps = () => {
               onSubmitEditing={searchPlace}
               returnKeyType="search"
             />
-
+           
             {searchQuery.trim() ? (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
                 <Ionicons name="close-circle" size={20} color="#333" style={styles.clearIcon} />
@@ -303,10 +302,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#1E90FF',
-  },
-  loader: {
-    width: 150,
-    height: 150,
   },
   map: {
     ...StyleSheet.absoluteFillObject,
