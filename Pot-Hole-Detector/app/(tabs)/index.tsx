@@ -1,14 +1,15 @@
-import React from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useNavigation } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
+// app/(tabs)/index.tsx
+
+import React from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, Image } from 'react-native';
+import { useNavigation } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Index() {
   const navigation = useNavigation();
 
   return (
     <LinearGradient
-      // gradient
       colors={["#0f2027", "#203a43", "#2c5364"]}
       style={styles.gradientContainer}
     >
