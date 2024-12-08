@@ -15,8 +15,10 @@ import { LineChart, PieChart } from 'react-native-chart-kit';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import LottieView from 'lottie-react-native';
+import loadingAnimation from '../../assets/animations/dashboardLoader.json'; // Adjust the path as needed
 
-// Mock Data (Replace with real data from our backend or state management)
+// Mock Data (Replace with real data from your backend or state management)
 const mockData = {
   totalPotholes: 2500,
   monthlyDetections: {
@@ -221,7 +223,12 @@ export default function Dashboard() {
     <SafeAreaView style={styles.safeArea}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FF7E5F" />
+          <LottieView
+            source={loadingAnimation}
+            autoPlay
+            loop
+            style={styles.lottieAnimation}
+          />
           <Text style={styles.loadingText}>Loading Dashboard...</Text>
         </View>
       ) : (
@@ -279,9 +286,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  lottieAnimation: {
+    width: 150, // Adjust width as needed
+    height: 150, // Adjust height as needed
+  },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
+    marginTop: 20,
+    fontSize: 18,
     color: '#FF7E5F',
     fontWeight: '600',
   },
@@ -418,4 +429,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
