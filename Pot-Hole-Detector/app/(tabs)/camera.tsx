@@ -13,7 +13,9 @@ import processingAnimation from '../../assets/animations/processing.json'; // Im
 import camLoaderAnimation from '../../assets/animations/cameraLoader.json'; // Import camera loader animation
 
 // Import Environment Variables
-import {ROBOFLOW_API_URL, ROBOFLOW_API_KEY} from '@env';
+// Direct API Configurations
+const ROBOFLOW_API_URL = "https://detect.roboflow.com/potholes-detection-qwkkc/5";
+const ROBOFLOW_API_KEY = "06CdohBqfvMermFXu3tL";
 
 const { width, height } = Dimensions.get('window');
 

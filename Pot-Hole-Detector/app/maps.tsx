@@ -19,7 +19,9 @@ import * as Location from 'expo-location';
 import { useNavigation } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
-import { GOOGLE_MAPS_API_KEY } from '@env'; // Import the API key
+
+// Direct API Key (Hardcoded)
+const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg";
 
 const Maps = () => {
   const navigation = useNavigation();
