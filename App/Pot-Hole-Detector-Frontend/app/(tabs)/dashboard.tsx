@@ -84,7 +84,7 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await fetch('http://10.51.11.170:3000/api/v1/pothole/dashboard', {
+      const response = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/dashboard', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
