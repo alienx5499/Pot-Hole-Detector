@@ -90,14 +90,15 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ## **⚙️ Setup Instructions**
 
-### Prerequisites
-- **Node.js** (v16.10.0 or higher)
-- **Expo CLI**: Install globally using `npm install -g expo-cli`
-- **Git**: For version control
-- **API Keys**:
-  - **Google Maps API**: For geolocation and address lookup
-  - **Twitter API**: For posting reports
-  - **Cloudinary/Amazon S3**: For image storage
+### **Frontend Setup**
+- **Prerequisites**
+  - **Node.js** (v16.10.0 or higher)
+  - **Expo CLI**: Install globally using `npm install -g expo-cli`
+  - **Git**: For version control
+  - **API Keys**:
+    - **Google Maps API**: For geolocation and address lookup
+    - **Twitter API**: For posting reports
+    - **Cloudinary/Amazon S3**: For image storage
 
 1. **Clone the Repository**
    ```bash
@@ -144,6 +145,61 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 8. **Deployment**
    Deploy the backend server using platforms like Heroku, AWS, or DigitalOcean. For the mobile app, publish to Google Play Store and Apple App Store.
    
+
+### **Backend Setup**
+
+1. **Navigate to Backend Directory**   ```bash
+   cd Pot-Hole-Detector-Backend   ```
+
+2. **Install Dependencies**   ```bash
+   npm install   ```
+
+3. **Environment Configuration**
+   - Create a `.env` file in the backend root directory
+   - Copy contents from `.env.example` and fill in your values:   ```plaintext
+   MONGO_URL=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret_key   ```
+
+4. **Database Setup**
+   - Ensure MongoDB is installed and running
+   - Create a new MongoDB database
+   - Add the connection string to your `.env` file
+
+5. **Create Upload Directory**   ```bash
+   mkdir uploads   ```
+
+6. **Start Development Server**   ```bash
+   # For development
+   npm run dev
+ ```
+
+7. **Verify Installation**
+   - The server should be running on `http://localhost:3000`
+   - Test the endpoints:
+     - Auth: `POST http://localhost:3000/api/v1/auth/signup`
+     - Pothole: `POST http://localhost:3000/api/v1/pothole/upload`
+
+### **API Endpoints**
+
+#### Authentication
+- `POST /api/v1/auth/signup` - Register new user
+- `POST /api/v1/auth/signin` - Login existing user
+- `POST /api/v1/auth/guest-signin` - Login as guest
+- `POST /api/v1/auth/convert-guest` - Convert guest to regular user
+
+#### Pothole Reports
+- `POST /api/v1/pothole/upload` - Upload new pothole report
+- `GET /api/v1/pothole/dashboard` - Get user dashboard data
+- `GET /api/v1/pothole/recent-reports` - Get recent reports
+- `GET /api/v1/pothole/report/:id` - Get specific report details
+
+### **Backend Requirements**
+- Node.js v16.10.0 or higher
+- MongoDB v4.4 or higher
+- NPM or Yarn package manager
+- At least 1GB of free disk space
+- Active internet connection for API integrations
+
 ---
 
 ## **🚨 Resource Warning**
