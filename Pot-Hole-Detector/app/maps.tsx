@@ -3,133 +3,143 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
-  TextInput,
   StyleSheet,
   TouchableOpacity,
   Text,
   Dimensions,
-  Keyboard,
-  Platform,
   Modal,
   Animated,
   Alert,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { useNavigation } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Direct API Key (Hardcoded)
 const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg";
-
+const { width, height } = Dimensions.get('window');
 const Maps = () => {
-  const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [region, setRegion] = useState<Region>({
-    latitude: 12.9716,
-    longitude: 77.5946,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  });
-  const [address, setAddress] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
-  const mapsRef = useRef<MapView>(null);
-
-  // Success Modal State
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState<Region | null>(null);
+  const [address, setAddress] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
   const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [aiResults, setAiResults] = useState<any[]>([]);
 
   useEffect(() => {
-    (async () => {
-      // Request location permissions
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Permission to access location was denied');
-        setLoading(false);
+    checkAuthAndLocation();
+  }, []);
+
+  const getAddressFromCoords = async (lat: number, lng: number) => {
+    try {
+      if (!lat || !lng) {
+        console.error('Invalid coordinates:', { lat, lng });
+        setAddress('Invalid coordinates');
         return;
       }
 
-      // Get current location
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
-
-      // Update region to current location
-      setRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      });
-
-      setLoading(false);
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (region.latitude && region.longitude) {
-      getAddress();
-    }
-  }, [region]);
-
-  const getAddress = async () => {
-    try {
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${region.latitude},${region.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
-      const response = await fetch(url);
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      
       const data = await response.json();
-
-      if (data.status === 'OK') {
-        const fetchedAddress = data.results[0]?.formatted_address || 'No address found';
-        setAddress(fetchedAddress);
+      
+      if (data.status === 'REQUEST_DENIED') {
+        throw new Error('Google Maps API key is invalid or missing required permissions');
+      }
+      
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
+        setAddress(data.results[0].formatted_address);
       } else {
-        setAddress('Unable to fetch address');
+        throw new Error(`Geocoding failed: ${data.status}`);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Geocoding error:', error);
+      setAddress('Could not determine address');
     }
   };
 
-  const searchPlace = async () => {
-    if (!searchQuery.trim()) {
-      Alert.alert('Empty Search', 'Please enter a location to search.');
-      return;
-    }
-
+  const checkAuthAndLocation = async () => {
     try {
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        searchQuery
-      )}&key=${GOOGLE_MAPS_API_KEY}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.replace('/auth');
+        return;
+      }
 
-      if (data.status === 'OK') {
-        const { lat, lng } = data.results[0].geometry.location;
-        const newRegion: Region = {
-          latitude: lat,
-          longitude: lng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        };
-        setRegion(newRegion);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required.');
+        return;
+      }
 
-        // Animate map to the searched location
-        mapsRef.current?.animateToRegion(newRegion, 1000);
+      if (params.result) {
+        try {
+          const parsedResult = typeof params.result === 'string' 
+            ? JSON.parse(params.result)
+            : params.result;
+          
+          if (!parsedResult.latitude || !parsedResult.longitude) {
+            throw new Error('Missing coordinates in result');
+          }
 
-        // Dismiss the keyboard
-        Keyboard.dismiss();
+          const lat = parseFloat(parsedResult.latitude);
+          const lng = parseFloat(parsedResult.longitude);
+          
+          if (isNaN(lat) || isNaN(lng)) {
+            throw new Error('Invalid coordinates received');
+          }
+
+          const newLocation = {
+            latitude: lat,
+            longitude: lng,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          };
+          setLocation(newLocation);
+          
+          await getAddressFromCoords(newLocation.latitude, newLocation.longitude);
+
+          if (parsedResult.aiResults) {
+            setAiResults(parsedResult.aiResults);
+          }
+        } catch (error) {
+          throw new Error('Failed to process location data');
+        }
       } else {
-        Alert.alert('Location Not Found', 'Please try a different search query.');
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High
+        });
+
+        if (!currentLocation?.coords?.latitude || !currentLocation?.coords?.longitude) {
+          throw new Error('Invalid location data received');
+        }
+
+        const newLocation = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        };
+        setLocation(newLocation);
+        await getAddressFromCoords(newLocation.latitude, newLocation.longitude);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Location Error:', error);
+      Alert.alert('Error', error.message || 'Failed to get location. Please check your settings.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = () => {
-    // Perform any submission logic here (e.g., sending data to backend)
-
-    // Show success modal
     setModalVisible(true);
     Animated.spring(scaleAnim, {
       toValue: 1,
@@ -137,163 +147,153 @@ const Maps = () => {
       useNativeDriver: true,
     }).start();
 
-    // Navigate to Home screen after animation
     setTimeout(() => {
       setModalVisible(false);
       scaleAnim.setValue(0);
-      navigation.navigate('(tabs)', { screen: 'index' });
-    }, 2000); // Duration matches animation length
+      router.replace('/(tabs)/dashboard');
+    }, 2000);
   };
 
-  const currentLocation = async () => {
-    try {
-      // Display loading indicator
-      setLoading(true);
+  const AiResultsSheet = () => (
+    <View style={styles.aiResultsSheet}>
+      <View style={styles.aiResultsHeader}>
+        <MaterialIcons name="science" size={24} color="#333" />
+        <Text style={styles.aiResultsTitle}>AI Detection Results</Text>
+      </View>
+      
+      {aiResults.map((result, index) => (
+        <View key={index} style={styles.aiResultItem}>
+          <View style={styles.resultRow}>
+            <Text style={styles.resultLabel}>Pothole Type:</Text>
+            <Text style={styles.resultValue}>{result.class}</Text>
+          </View>
+          
+          <View style={styles.resultRow}>
+            <Text style={styles.resultLabel}>Confidence:</Text>
+            <View style={styles.confidenceContainer}>
+              <View 
+                style={[
+                  styles.confidenceBar, 
+                  { 
+                    width: `${result.confidence * 100}%`,
+                    backgroundColor: getConfidenceColor(result.confidence)
+                  }
+                ]} 
+              />
+              <Text style={styles.confidenceText}>
+                {(result.confidence * 100).toFixed(1)}%
+              </Text>
+            </View>
+          </View>
 
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
+          {result.bbox && (
+            <View style={styles.resultRow}>
+              <Text style={styles.resultLabel}>Size:</Text>
+              <Text style={styles.resultValue}>
+                {Math.round(result.bbox.width)}x{Math.round(result.bbox.height)} px
+              </Text>
+            </View>
+          )}
+        </View>
+      ))}
+    </View>
+  );
 
-      // Update region to current location
-      setRegion({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      });
-      mapsRef.current?.animateToRegion(region, 1000);
-
-      // Dismiss the loading indicator
-      setSearchQuery('');
-      setLoading(false);
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-      setLoading(false);
-    }
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.8) return '#4CAF50';
+    if (confidence >= 0.6) return '#FFC107';
+    return '#F44336';
   };
+
+  const onRegionChangeComplete = async (newRegion: Region) => {
+    await getAddressFromCoords(newRegion.latitude, newRegion.longitude);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LottieView
+          source={require('../assets/animations/cycleLoader.json')}
+          autoPlay
+          loop
+          style={styles.loader}
+        />
+        <Text style={styles.loadingText}>Loading map...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <LottieView
-            source={require('../assets/animations/cycleLoader.json')} // Ensure correct path
-            autoPlay
-            loop
-            style={styles.loader}
+      {location ? (
+        <MapView
+          style={styles.map}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+          initialRegion={location}
+          onRegionChangeComplete={onRegionChangeComplete}
+        >
+          <Marker
+            coordinate={{
+              latitude: location.latitude,
+              longitude: location.longitude,
+            }}
+            title="Pothole Location"
+            description={address}
           />
-          <Text style={styles.loadingText}>Fetching your location...</Text>
-        </View>
+        </MapView>
       ) : (
-        <>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.map}
-            ref={mapsRef}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-            followsUserLocation={true}
-            initialRegion={region}
-            camera={{
-              center: {
-                latitude: region.latitude,
-                longitude: region.longitude,
-              },
-              pitch: 45,
-              heading: 90,
-              zoom: 20,
-            }}
-            mapType="satellite"
-          >
-            <Marker
-              coordinate={{ latitude: region.latitude, longitude: region.longitude }}
-              title="Pothole Location"
-              // description={address}
-              pinColor="#FF6347" // Tomato color for visibility
-              draggable
-              onDragEnd={(e) => {
-                setRegion({
-                  latitude: e.nativeEvent.coordinate.latitude,
-                  longitude: e.nativeEvent.coordinate.longitude,
-                  latitudeDelta: 0.05,
-                  longitudeDelta: 0.05,
-                });
-              }}
-            />
-          </MapView>
-
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#333" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search location"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={searchPlace}
-              returnKeyType="search"
-            />
-
-            {searchQuery.trim() ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color="#333" style={styles.clearIcon} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          {/* Current Location Button */}
-          <TouchableOpacity
-            style={styles.currentLocationButton}
-            onPress={currentLocation}
-            accessibilityLabel="Use current location"
-          >
-            <Ionicons name="locate-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-
-          {/* Bottom Sheet */}
-          <View style={styles.bottomSheet}>
-            <Text style={styles.addressText}>{address}</Text>
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>Submit</Text>
-              <MaterialIcons name="navigate-next" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Success Modal */}
-          <Modal
-            transparent={true}
-            animationType="fade"
-            visible={modalVisible}
-            onRequestClose={() => {
-              setModalVisible(false);
-              scaleAnim.setValue(0);
-            }}
-          >
-            <View style={styles.modalContainer}>
-              <Animated.View style={[styles.modalContent, { transform: [{ scale: scaleAnim }] }]}>
-                <LottieView
-                  source={require('../assets/animations/success.json')} // Corrected path
-                  autoPlay
-                  loop={false}
-                  style={styles.lottie}
-                  onAnimationFinish={() => {
-                    // Optional: Handle animation completion
-                  }}
-                />
-                <Text style={styles.modalText}>Successfully Submitted!</Text>
-              </Animated.View>
-            </View>
-          </Modal>
-        </>
+        <View style={styles.loadingContainer}>
+          <Text>Getting location...</Text>
+        </View>
       )}
+
+      {aiResults.length > 0 && <AiResultsSheet />}
+
+      <View style={styles.bottomSheet}>
+        <Text style={styles.addressText} numberOfLines={2}>
+          {address || (
+            <View style={styles.loadingAddressContainer}>
+              <ActivityIndicator size="small" color="#007AFF" />
+              <Text style={styles.loadingAddressText}>Getting address...</Text>
+            </View>
+          )}
+        </Text>
+        <TouchableOpacity 
+          style={styles.submitButton} 
+          onPress={handleSubmit}
+          disabled={!address || address === 'Loading address...'}
+        >
+          <Text style={styles.submitButtonText}>Submit</Text>
+          <MaterialIcons name="navigate-next" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Animated.View style={[styles.modalContent, { transform: [{ scale: scaleAnim }] }]}>
+            <LottieView
+              source={require('../assets/animations/success.json')}
+              autoPlay
+              loop={false}
+              style={styles.lottie}
+            />
+            <Text style={styles.modalText}>Successfully Submitted!</Text>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
-const { width, height } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  map: {
     flex: 1,
   },
   loadingContainer: {
@@ -302,121 +302,149 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 10,
     fontSize: 16,
-    color: '#1E90FF',
   },
   loader: {
-    width: 150,
-    height: 150,
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  searchContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  clearIcon: {
-    marginLeft: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    fontSize: 16,
-    color: '#333',
-  },
-  currentLocationButton: {
-    position: 'absolute',
-    bottom: 150,
-    right: 30,
-    backgroundColor: '#007bff',
-    borderRadius: 30,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3.84,
-    elevation: 5,
+    width: 100,
+    height: 100,
   },
   bottomSheet: {
     position: 'absolute',
     bottom: 0,
     width: width,
-    height: 100,
     backgroundColor: '#fff',
+    padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 10,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   addressText: {
-    flex: 1,
     fontSize: 16,
-    color: '#555',
-    marginRight: 10,
+    marginBottom: 10,
   },
   submitButton: {
+    backgroundColor: '#007AFF',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E90FF', // DodgerBlue
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 10,
   },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
-    marginRight: 8,
-    fontWeight: '600',
+    marginRight: 5,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    width: width * 0.8,
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 30,
-    justifyContent: 'center',
+    padding: 20,
+    borderRadius: 10,
     alignItems: 'center',
   },
-  lottie: {
-    width: 200, // Increased from 100 to 200
-    height: 200, // Increased from 100 to 200
-  },
   modalText: {
-    marginTop: 20,
     fontSize: 18,
+    marginTop: 10,
+  },
+  lottie: {
+    width: 100,
+    height: 100,
+  },
+  aiResultsSheet: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 15,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxHeight: height * 0.4,
+  },
+  aiResultsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  aiResultsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 10,
+  },
+  aiResultItem: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  resultLabel: {
+    fontSize: 14,
+    color: '#666',
+    width: 100,
+    fontWeight: '500',
+  },
+  resultValue: {
+    fontSize: 14,
     color: '#333',
     fontWeight: '600',
-    textAlign: 'center',
+    flex: 1,
+  },
+  confidenceContainer: {
+    flex: 1,
+    height: 20,
+    backgroundColor: '#eee',
+    borderRadius: 10,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  confidenceBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 10,
+  },
+  confidenceText: {
+    fontSize: 12,
+    color: '#333',
+    fontWeight: '600',
+    marginLeft: 8,
+    zIndex: 1,
+  },
+  loadingAddressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingAddressText: {
+    marginLeft: 8,
+    color: '#666',
+    fontSize: 14,
   },
 });
 
