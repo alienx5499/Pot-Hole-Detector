@@ -241,7 +241,7 @@ export default function Camera() {
       formData.append('detectionResultPercentage', confidencePercentage.toString());
 
       
-      const uploadResponse = await fetch('http://10.51.11.170:3000/api/v1/pothole/upload', {
+      const uploadResponse = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/upload', {
         method: 'POST',
         body: formData,
         headers: {
