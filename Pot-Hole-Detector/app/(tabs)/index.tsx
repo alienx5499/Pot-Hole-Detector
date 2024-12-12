@@ -1,10 +1,65 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Text, View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useNavigation } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import GuestConversionModal from '../components/GuestConversionModal';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Index() {
   const navigation = useNavigation();
+  const router = useRouter();
+  const [showConversionModal, setShowConversionModal] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const checkGuestStatus = async () => {
+        const isGuestUser = await AsyncStorage.getItem('isGuest');
+        setIsGuest(isGuestUser === 'true');
+      };
+      checkGuestStatus();
+    }, [])
+  );
+
+  const checkAuth = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.replace('/auth');
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      router.replace('/auth');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userToken');
+      router.replace('/auth');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  const handleCameraPress = () => {
+    router.push("/camera");
+  };
+
+  const handleDashboardPress = () => {
+    router.push("/dashboard");
+  };
+
+  const handleConversionSuccess = () => {
+    setShowConversionModal(false);
+    setIsGuest(false);
+  };
 
   return (
     <LinearGradient
@@ -33,7 +88,7 @@ export default function Index() {
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.ctaButtonContainer}
-            onPress={() => navigation.navigate("camera")}
+            onPress={handleCameraPress}
           >
             <LinearGradient
               colors={["#ffd200", "#ffa300"]}
@@ -47,7 +102,7 @@ export default function Index() {
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.ctaButtonContainer}
-            onPress={() => navigation.navigate("dashboard")}
+            onPress={handleDashboardPress}
           >
             <LinearGradient
               colors={["#ffd200", "#ffa300"]}
@@ -56,9 +111,39 @@ export default function Index() {
               <Text style={styles.ctaButtonText}>View Dashboard</Text>
             </LinearGradient>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.ctaButtonContainer}
+            onPress={handleLogout}
+          >
+            <LinearGradient
+              colors={["#ffd200", "#ffa300"]}
+              style={styles.ctaButton}
+            >
+              <Text style={styles.ctaButtonText}>Logout</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.footer}>Together, let's improve our roads.</Text>
+
+        {isGuest && (
+          <TouchableOpacity
+            style={styles.conversionPrompt}
+            onPress={() => setShowConversionModal(true)}
+          >
+            <Text style={styles.conversionText}>
+              Create an account to save your data
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        <GuestConversionModal
+          visible={showConversionModal}
+          onClose={() => setShowConversionModal(false)}
+          onSuccess={handleConversionSuccess}
+        />
       </View>
     </LinearGradient>
   );
@@ -148,5 +233,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: "auto",
     paddingHorizontal: 20,
+  },
+  conversionPrompt: {
+    position: 'absolute',
+    bottom: 20,
+    backgroundColor: 'rgba(74, 144, 226, 0.9)',
+    padding: 15,
+    borderRadius: 25,
+    alignSelf: 'center',
+  },
+  conversionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

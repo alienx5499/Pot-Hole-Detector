@@ -10,6 +10,8 @@ import {
   SafeAreaView,
   ActivityIndicator,
   ScrollView,
+  Alert,
+  Platform,
 } from 'react-native';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -17,43 +19,46 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import loadingAnimation from '../../assets/animations/dashboardLoader.json'; // Adjust the path as needed
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
-// Mock Data (Replace with real data from your backend or state management)
-const mockData = {
-  totalPotholes: 2500,
-  monthlyDetections: {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        data: [300, 400, 350, 500, 450, 600, 700, 650, 800, 750, 900, 850],
-        color: (opacity = 1) => `rgba(34, 128, 176, ${opacity})`, // Optional
-        strokeWidth: 2, // Optional
-      },
-    ],
-  },
-  reporterLevels: [
-    { name: 'AlienX', level: 5 },
-    { name: 'AlienY', level: 3 },
-    { name: 'AlienZ', level: 7 },
-    { name: 'AlienXX', level: 10 },
-    { name: 'AlienXY', level: 2 },
-    // Add more reporters as needed
-  ],
-  recentDetections: [
-    { id: 1, location: 'Electronics City, Bangalore', date: '2024-12-07', reporter: 'AlienX', level: 5 },
-    { id: 2, location: 'Connaught Place, Delhi', date: '2024-04-23', reporter: 'AlienY', level: 3 },
-    { id: 3, location: 'Marine Drive, Mumbai', date: '2024-04-20', reporter: 'AlienZ', level: 7 },
-    { id: 4, location: 'Salt Lake, Kolkata', date: '2024-04-25', reporter: 'AlienXX', level: 10 },
-    // Add more detections as needed
-  ],
-  mapMarkers: [
-    { id: 1, latitude: 12.9716, longitude: 77.5946, title: 'MG Road, Bangalore', severity: 'high' }, // Bengaluru
-    { id: 2, latitude: 28.6139, longitude: 77.2090, title: 'Connaught Place, Delhi', severity: 'moderate' }, // Delhi
-    { id: 3, latitude: 19.0760, longitude: 72.8777, title: 'Marine Drive, Mumbai', severity: 'moderate' }, // Mumbai
-    { id: 4, latitude: 22.5726, longitude: 88.3639, title: 'Salt Lake, Kolkata', severity: 'low' }, // West Bengal
-    // Add more markers as needed
-  ],
-};
+// Add new interfaces
+interface DashboardData {
+  user: {
+    name: string;
+    email: string;
+  };
+  reports: {
+    imageUrl: string;
+    location: {
+      latitude: number;
+      longitude: number;
+      address: string;
+    };
+    detectionResultPercentage: number;
+    createdAt: string;
+  }[];
+  statistics: {
+    totalPotholes: number;
+    monthlyDetections: number[];
+    userStats: {
+      totalReports: number;
+      confidenceLevels: {
+        level: number;
+      }[];
+      firstReport: string;
+      lastReport: string;
+    };
+  };
+}
+
+interface MapMarker {
+  id: string;
+  latitude: number;
+  longitude: number;
+  title: string;
+  severity: string;
+}
 
 const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
@@ -61,58 +66,113 @@ const screenHeight = Dimensions.get('window').height;
 export default function Dashboard() {
   const [totalPotholes, setTotalPotholes] = useState<number>(0);
   const [monthlyDetections, setMonthlyDetections] = useState<any>(null);
-  const [reporterLevels, setReporterLevels] = useState<any[]>([]);
   const [recentDetections, setRecentDetections] = useState<any[]>([]);
-  const [mapMarkers, setMapMarkers] = useState<any[]>([]);
+  const [mapMarkers, setMapMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [pieData, setPieData] = useState<any[]>([]);
 
   useEffect(() => {
-    // Simulate data fetching
-    setTimeout(() => {
-      setTotalPotholes(mockData.totalPotholes);
-      setMonthlyDetections(mockData.monthlyDetections);
-      setReporterLevels(mockData.reporterLevels);
-      setRecentDetections(mockData.recentDetections);
-      setMapMarkers(mockData.mapMarkers);
-      setLoading(false);
-    }, 1000); // Simulated delay
+    fetchDashboardData();
   }, []);
 
-  // Calculate reporter level distribution for PieChart
-  const reporterLevelDistribution = reporterLevels.reduce((acc, reporter) => {
-    acc[reporter.level] = (acc[reporter.level] || 0) + 1;
-    return acc;
-  }, {} as { [key: number]: number });
+  const fetchDashboardData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.replace('/auth');
+        return;
+      }
 
-  const pieData = Object.keys(reporterLevelDistribution).map((level) => ({
-    name: `Level ${level}`,
-    population: reporterLevelDistribution[parseInt(level)],
-    color: getColorByLevel(parseInt(level)),
-    legendFontColor: '#7F7F7F',
-    legendFontSize: 12,
-  }));
+      const response = await fetch('http://10.51.11.170:3000/api/v1/pothole/dashboard', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
 
-  // Helper function to get color based on reporter level
-  function getColorByLevel(level: number): string {
-    if (level <= 2) return '#FFB6C1'; // Light Red
-    if (level <= 4) return '#FFA500'; // Orange
-    if (level <= 6) return '#FFD700'; // Gold
-    if (level <= 8) return '#32CD32'; // LimeGreen
-    return '#8B0000'; // Deep Red
-  }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-  // Helper function to get color based on severity level
-  function getColorBySeverity(severity: string): string {
-    switch (severity) {
-      case 'high':
-        return '#8B0000';
-      case 'moderate':
-        return '#FFA500';
-      case 'low':
-        return '#FFB6C1';
-      default:
-        return '#FF6347';
+      const text = await response.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse response:', text);
+        throw new Error('Invalid response from server');
+      }
+
+      if (result.success) {
+        setDashboardData(result.data);
+        setTotalPotholes(result.data.statistics.totalPotholes);
+        
+        setMonthlyDetections({
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [{
+            data: result.data.statistics.monthlyDetections,
+            color: (opacity = 1) => `rgba(255, 126, 95, ${opacity})`,
+            strokeWidth: 2,
+          }],
+        });
+
+        const markers = result.data.reports.map((report: any) => ({
+          id: report._id || String(Math.random()),
+          latitude: Number(report.location.latitude),
+          longitude: Number(report.location.longitude),
+          title: report.location.address || 'Pothole Location',
+          severity: getSeverityFromConfidence(report.detectionResultPercentage),
+        }));
+        setMapMarkers(markers);
+
+        const recentDetections = result.data.reports.slice(0, 5).map((report: any) => ({
+          id: report._id,
+          location: report.location.address,
+          date: new Date(report.createdAt).toISOString().split('T')[0],
+          reporter: result.data.user.name,
+          level: Math.floor(report.detectionResultPercentage / 10),
+        }));
+        setRecentDetections(recentDetections);
+
+        const confidenceLevels = result.data.statistics.userStats.confidenceLevels;
+        const levelDistribution = confidenceLevels.reduce((acc: { [key: number]: number }, { level }: { level: number }) => {
+            acc[level] = (acc[level] || 0) + 1;
+            return acc;
+        }, {} as { [key: number]: number });
+
+        const newPieData = Object.entries(levelDistribution).map(([level, count]) => ({
+            name: `Level ${level}`,
+            population: count,
+            color: getColorByLevel(parseInt(level)),
+            legendFontColor: '#7F7F7F',
+            legendFontSize: 12,
+        }));
+
+        setPieData(newPieData);
+      }
+    } catch (error: any) {
+      console.error('Error fetching dashboard data:', error);
+      Alert.alert('Error', 'Failed to load dashboard data. Please try again.');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const getSeverityFromConfidence = (confidence: number): string => {
+    if (confidence >= 0.8) return 'high';
+    if (confidence >= 0.6) return 'moderate';
+    return 'low';
+  };
+
+  function getColorByLevel(level: number): string {
+    if (level <= 2) return '#FFB6C1'; // 0-2: Beginner (0-20%)
+    if (level <= 4) return '#FFA500'; // 3-4: Intermediate (21-40%)
+    if (level <= 6) return '#FFD700'; // 5-6: Advanced (41-60%)
+    if (level <= 8) return '#32CD32'; // 7-8: Expert (61-80%)
+    return '#8B0000'; // 9-10: Master (81-100%)
   }
 
   // Render Item for Recent Detections
@@ -150,7 +210,7 @@ export default function Dashboard() {
         {monthlyDetections ? (
           <LineChart
             data={monthlyDetections}
-            width={screenWidth * 0.9} // 90% of screen width
+            width={screenWidth * 0.9}
             height={200}
             yAxisLabel=""
             yAxisSuffix=""
@@ -165,10 +225,14 @@ export default function Dashboard() {
                 borderRadius: 16,
               },
               propsForDots: {
-                r: '4',
+                r: '6',
                 strokeWidth: '2',
                 stroke: '#FEB47B',
               },
+              propsForBackgroundLines: {
+                strokeWidth: 1,
+                stroke: '#efefef',
+              }
             }}
             bezier
             style={{
@@ -182,30 +246,21 @@ export default function Dashboard() {
         )}
       </View>
 
-      {/* Reporter Levels Pie Chart */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Reporter Levels Distribution</Text>
+        <Text style={styles.cardTitle}>Report Confidence Distribution</Text>
         {pieData.length > 0 ? (
           <PieChart
             data={pieData}
-            width={screenWidth * 0.9} // 90% of screen width
+            width={screenWidth * 0.9}
             height={200}
             chartConfig={{
-              backgroundColor: '#fff',
-              backgroundGradientFrom: '#fff',
-              backgroundGradientTo: '#fff',
-              color: (opacity = 1) => `rgba(255, 126, 95, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
             }}
             accessor="population"
             backgroundColor="transparent"
             paddingLeft="15"
             absolute
             hasLegend={true}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16,
-            }}
           />
         ) : (
           <ActivityIndicator size="large" color="#FF7E5F" />
@@ -242,28 +297,32 @@ export default function Dashboard() {
               {/* Map with Pothole Locations */}
               <View style={styles.mapCard}>
                 <Text style={styles.cardTitle}>Pothole Locations in India</Text>
-                <MapView
-                  provider={PROVIDER_GOOGLE}
-                  style={styles.map}
-                  initialRegion={{
-                    latitude: 22.5937, // Center of India
-                    longitude: 78.9629,
-                    latitudeDelta: 20, // Wide view to cover India
-                    longitudeDelta: 20,
-                  }}
-                  showsUserLocation={true}
-                  showsMyLocationButton={true}
-                >
-                  {mapMarkers.map((marker) => (
-                    <Marker
-                      key={marker.id}
-                      coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
-                      title={marker.title}
-                      description="Pothole detected here"
-                      pinColor={getColorBySeverity(marker.severity)}
-                    />
-                  ))}
-                </MapView>
+                {mapMarkers.length > 0 ? (
+                  <MapView
+                    style={styles.map}
+                    initialRegion={{
+                      latitude: 20.5937,
+                      longitude: 78.9629,
+                      latitudeDelta: 30,
+                      longitudeDelta: 30,
+                    }}
+                  >
+                    {mapMarkers.map((marker: MapMarker) => (
+                      <Marker
+                        key={marker.id}
+                        coordinate={{
+                          latitude: marker.latitude,
+                          longitude: marker.longitude,
+                        }}
+                        title={marker.title}
+                      />
+                    ))}
+                  </MapView>
+                ) : (
+                  <View style={[styles.map, styles.noMapData]}>
+                    <Text style={styles.noMapDataText}>No pothole locations to display</Text>
+                  </View>
+                )}
               </View>
             </>
           }
@@ -326,7 +385,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
+    marginVertical: 20, // Added vertical margin
     shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 3 },
@@ -354,8 +413,9 @@ const styles = StyleSheet.create({
   },
   map: {
     width: '100%',
-    height: screenHeight * 0.3,
+    height: screenHeight * 0.4, 
     borderRadius: 16,
+    marginTop: 10,
   },
   recentHeader: {
     width: '100%',
@@ -427,5 +487,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  noMapData: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  noMapDataText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

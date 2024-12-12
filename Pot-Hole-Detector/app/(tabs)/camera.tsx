@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, StyleSheet, Text, TouchableOpacity, Alert, Dimensions, Animated } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system';
@@ -11,21 +11,30 @@ import axios from 'axios';
 import LottieView from 'lottie-react-native'; // Import LottieView
 import processingAnimation from '../../assets/animations/processing.json'; // Import processing animation
 import camLoaderAnimation from '../../assets/animations/cameraLoader.json'; // Import camera loader animation
+import * as Location from 'expo-location'; // Add this import if not already present
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import Environment Variables
 // Direct API Configurations
 const ROBOFLOW_API_URL = "https://detect.roboflow.com/potholes-detection-qwkkc/5";
 const ROBOFLOW_API_KEY = "06CdohBqfvMermFXu3tL";
+const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg";
 
 const { width, height } = Dimensions.get('window');
+
+let locationData: Location.LocationObject;
 
 export default function Camera() {
   const [isLoading, setIsLoading] = useState(true); // Loading state for splash
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false); // State to control the loader visibility
+  const [modalVisible, setModalVisible] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading duration equal to animation's length
@@ -40,6 +49,24 @@ export default function Camera() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const userToken = await AsyncStorage.getItem('userToken');
+      if (!userToken) {
+        router.replace('/auth');
+        return;
+      }
+      setToken(userToken);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      router.replace('/auth');
+    }
+  };
 
   const requestPermissions = async (): Promise<boolean> => {
     const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
@@ -72,7 +99,7 @@ export default function Camera() {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while taking the photo.', [{ text: 'OK' }]);
+      Alert.alert('Error', 'An error occurred while taking the photo.');
     }
   };
 
@@ -102,58 +129,179 @@ export default function Camera() {
 
   const detectPothole = async () => {
     if (!image) {
-      Alert.alert('No Image', 'Please select or take a photo before proceeding.', [{ text: 'OK' }]);
+      Alert.alert('No Image', 'Please select or take a photo before proceeding.');
       return;
     }
 
-    setIsProcessing(true); // Show loader when processing starts
-    setUploading(true); // Indicate uploading state
+    if (!token) {
+      router.replace('/auth');
+      return;
+    }
+
+    setIsProcessing(true);
+    setUploading(true);
 
     try {
-      const base64Image = await FileSystem.readAsStringAsync(image, {
+      // Process with Roboflow API
+      const imageBase64 = await FileSystem.readAsStringAsync(image, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      const response = await axios({
+      const roboflowResponse = await axios({
         method: "POST",
         url: ROBOFLOW_API_URL,
         params: {
           api_key: ROBOFLOW_API_KEY,
         },
-        data: `data:image/jpeg;base64,${base64Image}`,
+        data: `data:image/jpeg;base64,${imageBase64}`,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
       });
 
-      const result = response.data;
-
-      if (result.predictions && result.predictions.length > 0) {
-        const highestConfidence = Math.max(
-          ...result.predictions.map((p: any) => p.confidence * 100)
-        );
-
-        if (highestConfidence > 50) {
-          Alert.alert(
-            "Detection Approved",
-            `Pothole detected with confidence ${highestConfidence.toFixed(2)}%.`,
-            [{ text: "OK" }]
-          );
-
-          navigation.navigate('maps', { imageUri: image, result });
-        } else {
-          Alert.alert("No Potholes Detected", "Detection confidence is below 50%.", [{ text: "OK" }]);
-        }
-      } else {
-        Alert.alert("No Potholes Detected", "No potholes were detected.", [{ text: "OK" }]);
+      if (!roboflowResponse.data.predictions || roboflowResponse.data.predictions.length === 0) {
+        throw new Error('No potholes detected in the image');
       }
+
+      // Get highest confidence prediction
+      const highestConfidence = Math.max(
+        ...roboflowResponse.data.predictions.map((p: any) => p.confidence)
+      );
+      const confidencePercentage = highestConfidence * 100;
+
+      if (confidencePercentage > 50) {
+        Alert.alert(
+          "Detection Approved",
+          `Pothole detected with confidence ${confidencePercentage.toFixed(2)}%.`,
+          [{ text: "OK" }]
+        );
+      } else {
+        Alert.alert("No Potholes Detected", "Detection confidence is below 50%.", [{ text: "OK" }]);
+        return;
+      }
+
+      // Get location
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Location permission is needed to mark pothole locations accurately.',
+          [{ text: 'OK' }]
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      try {
+        locationData = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High
+        });
+        
+        // Verify location data
+        if (!locationData?.coords?.latitude || !locationData?.coords?.longitude) {
+          throw new Error('Invalid location data received');
+        }
+        
+      } catch (error) {
+        console.error('Location error:', error);
+        Alert.alert(
+          'Location Error',
+          'Unable to get your current location. Please check your location settings and try again.',
+          [{ text: 'OK' }]
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // Get address
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${locationData.coords.latitude},${locationData.coords.longitude}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const addressData = await response.json();
+      
+      let address = '';
+      if (addressData.status === 'OK' && addressData.results && addressData.results.length > 0) {
+        address = addressData.results[0].formatted_address;
+      } else {
+        console.error('Geocoding API Error:', addressData.status);
+        address = 'Address not found';
+      }
+
+      
+      const formData = new FormData();
+      const imageFile = {
+        uri: image,
+        type: 'image/jpeg',
+        name: 'photo.jpg'
+      };
+      formData.append('image', imageFile as any);
+      formData.append('latitude', locationData.coords.latitude.toString());
+      formData.append('longitude', locationData.coords.longitude.toString());
+      formData.append('address', address);
+      formData.append('detectionResultPercentage', confidencePercentage.toString());
+
+      
+      const uploadResponse = await fetch('http://10.51.11.170:3000/api/v1/pothole/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const result = await uploadResponse.json();
+
+      if (result.success) {
+        setModalVisible(true);
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+
+        setTimeout(() => {
+          setModalVisible(false);
+          scaleAnim.setValue(0);
+          router.push({
+            pathname: "/maps",
+            params: { 
+              result: JSON.stringify({ 
+                latitude: locationData.coords.latitude,
+                longitude: locationData.coords.longitude,
+                address: address,
+                detectionResultPercentage: confidencePercentage,
+                aiResults: roboflowResponse.data.predictions
+              })
+            }
+          });
+        }, 2000);
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
+
     } catch (error: any) {
-      Alert.alert("Error", `Detection failed: ${error.message}`, [{ text: "OK" }]);
+      const errorMessage = error.message.includes('No potholes detected')
+        ? 'No potholes were detected in the image. Please try with a different image.'
+        : `Upload failed: ${error.message}`;
+      Alert.alert("Error", errorMessage);
     } finally {
-      setUploading(false); // Hide uploading state
-      setIsProcessing(false); // Hide loader once processing is done
+      setUploading(false);
+      setIsProcessing(false);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Location Permission',
+          'Location permission is needed to mark pothole locations accurately. Default location will be used.',
+          [{ text: 'OK' }]
+        );
+      }
+    })();
+  }, []);
 
   if (isLoading) {
     return (
