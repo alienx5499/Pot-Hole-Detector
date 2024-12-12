@@ -1,3 +1,4 @@
+
 <div align="center">
 
 # 🌟 **Pot Hole Detector** 🌟  
@@ -107,7 +108,6 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 2. **Navigate to the Project Directory**
    ```bash
    cd Pot-Hole-Detector
-   cd Pot-Hole-Detector
    ```
 3. **Install Dependencies**
    ```bash
@@ -123,6 +123,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
      TWITTER_API_KEY=your_twitter_api_key
      TWITTER_API_SECRET=your_twitter_api_secret
      ```
+
 5. **Configure Expo**
    Ensure that your app.json or app.config.js is set up correctly with necessary permissions for location and camera access.
 
@@ -133,7 +134,6 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
    - **For iOS:** Press i to open in the iOS simulator.
    - **For Android:** Press a to open in the Android emulator.
    - **On Physical Devices:** Use the Expo Go app to scan the QR code.
-   
 
 7. **Build for Production**
    Use Expo’s build service to create standalone builds:
@@ -144,61 +144,69 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 8. **Deployment**
    Deploy the backend server using platforms like Heroku, AWS, or DigitalOcean. For the mobile app, publish to Google Play Store and Apple App Store.
-   
 
 ### **Backend Setup**
+- **Prerequisites**
+  - Node.js v16.10.0 or higher
+  - MongoDB v4.4 or higher
+  - NPM or Yarn package manager
+  - At least 1GB of free disk space
+  - Active internet connection for API integrations
 
-1. **Navigate to Backend Directory**   ```bash
-   cd Pot-Hole-Detector-Backend   ```
+1. **Navigate to Backend Directory**  
+   ```bash
+   cd Pot-Hole-Detector-Backend
+   ```
 
-2. **Install Dependencies**   ```bash
-   npm install   ```
+2. **Install Dependencies**  
+   ```bash
+   npm install
+   ```
 
-3. **Environment Configuration**
-   - Create a `.env` file in the backend root directory
-   - Copy contents from `.env.example` and fill in your values:   ```plaintext
-   MONGO_URL=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret_key   ```
+3. **Environment Configuration**  
+   - Create a `.env` file in the backend root directory  
+   - Copy contents from `.env.example` and fill in your values:  
+     ```plaintext
+     MONGO_URL=your_mongodb_connection_string
+     JWT_SECRET=your_jwt_secret_key
+     ```
 
-4. **Database Setup**
-   - Ensure MongoDB is installed and running
-   - Create a new MongoDB database
+4. **Database Setup**  
+   - Ensure MongoDB is installed and running  
+   - Create a new MongoDB database  
    - Add the connection string to your `.env` file
 
-5. **Create Upload Directory**   ```bash
-   mkdir uploads   ```
+5. **Create Upload Directory**  
+   ```bash
+   mkdir uploads
+   ```
 
-6. **Start Development Server**   ```bash
-   # For development
+6. **Start Development Server**  
+   ```bash
    npm run dev
- ```
+   ```
 
 7. **Verify Installation**
    - The server should be running on `http://localhost:3000`
    - Test the endpoints:
-     - Auth: `POST http://localhost:3000/api/v1/auth/signup`
-     - Pothole: `POST http://localhost:3000/api/v1/pothole/upload`
+     - **Auth**: `POST http://localhost:3000/api/v1/auth/signup`
+     - **Pothole**: `POST http://localhost:3000/api/v1/pothole/upload`
 
-### **API Endpoints**
+---
 
-#### Authentication
-- `POST /api/v1/auth/signup` - Register new user
-- `POST /api/v1/auth/signin` - Login existing user
-- `POST /api/v1/auth/guest-signin` - Login as guest
-- `POST /api/v1/auth/convert-guest` - Convert guest to regular user
+## **🕸️ API Endpoints**
 
-#### Pothole Reports
-- `POST /api/v1/pothole/upload` - Upload new pothole report
-- `GET /api/v1/pothole/dashboard` - Get user dashboard data
-- `GET /api/v1/pothole/recent-reports` - Get recent reports
-- `GET /api/v1/pothole/report/:id` - Get specific report details
+1. **Authentication**  
+   - Register new user `POST /api/v1/auth/signup`
+   - Login existing user `POST /api/v1/auth/signin`
+   - Login as guest `POST /api/v1/auth/guest-signin` 
+   - Convert guest to regular user `POST /api/v1/auth/convert-guest` 
 
-### **Backend Requirements**
-- Node.js v16.10.0 or higher
-- MongoDB v4.4 or higher
-- NPM or Yarn package manager
-- At least 1GB of free disk space
-- Active internet connection for API integrations
+1. **Pothole Reports**  
+   - Upload new pothole report `POST /api/v1/pothole/upload`
+   - Get user dashboard data `GET /api/v1/pothole/dashboard` 
+   - Get recent reports `GET /api/v1/pothole/recent-reports`
+   - Get specific report details `GET /api/v1/pothole/report/:id`
 
 ---
 
@@ -224,6 +232,7 @@ Alternatively, use mock data during initial development to simulate production b
 ## **🤝 Contributing**
 
 We ❤️ open source! Contributions are welcome to make this project even better.  
+
 1. Fork the repository.  
 2. Create your feature branch.  
    ```bash
@@ -260,7 +269,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ### 📬 **Feedback & Suggestions**
 *We value your input! Share your thoughts through [GitHub Issues](https://github.com/alienx5499/Pot-Hole-Detector/issues).*
-
 
 💡 *Let's work together to improve road safety and awareness!*
 
