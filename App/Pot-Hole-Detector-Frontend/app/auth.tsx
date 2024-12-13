@@ -103,7 +103,7 @@ export default function Auth() {
       const endpoint = isLogin ? '/signin' : '/signup';
       const body = isLogin ? { email, password } : { name, email, password };
 
-      const response = await fetch(`http://10.51.11.170:3000/api/v1/auth${endpoint}`, {
+      const response = await fetch(`https://pot-hole-detector.onrender.com/api/v1/auth${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -127,7 +127,7 @@ export default function Auth() {
   const handleGuestSignIn = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://10.51.11.170:3000/api/v1/auth/guest-signin', {
+      const response = await fetch('https://pot-hole-detector.onrender.com/api/v1/auth/guest-signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 5,
   },
-  buttonSecondary: {
+    buttonSecondary: {
     backgroundColor: '#4A90E2',
     paddingVertical: 14,
     borderRadius: 10,
