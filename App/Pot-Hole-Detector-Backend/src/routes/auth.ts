@@ -4,6 +4,7 @@ import { z } from "zod";
 import { UserModel } from "../models";
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "../config";
+import { ReportModel } from "../models";
 import bcrypt from "bcrypt";
 const saltRounds = 10;
 const signupSchema = z.object({
@@ -240,6 +241,48 @@ authRouter.post("/convert-guest", async (req: Request, res: Response) => {
     });
   } catch (e) {
     console.error(e);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+});
+authRouter.get("/profile", async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No authorization token provided"
+      });
+      return;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET!) as { userId: string };
+    const user = await UserModel.findById(decoded.userId);
+    
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+      return;
+    }
+
+    // Get report count for level calculation
+    const reportCount = await ReportModel.countDocuments({ userId: user._id });
+
+    res.json({
+      success: true,
+      user: {
+        name: user.name,
+        email: user.email,
+        reports: reportCount,
+        // Add other user fields as needed
+      }
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error"
