@@ -1,43 +1,50 @@
 // app/(tabs)/camera.tsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, StyleSheet, Text, TouchableOpacity, Alert, Dimensions, Animated } from 'react-native';
+import {
+  View,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Dimensions,
+  Animated,
+  Platform,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system';
 import axios from 'axios';
-import LottieView from 'lottie-react-native'; // Import LottieView
-import processingAnimation from '../../assets/animations/processing.json'; // Import processing animation
-import camLoaderAnimation from '../../assets/animations/cameraLoader.json'; // Import camera loader animation
-import * as Location from 'expo-location'; // Add this import if not already present
+import LottieView from 'lottie-react-native';
+import processingAnimation from '../../assets/animations/processing.json';
+import camLoaderAnimation from '../../assets/animations/cameraLoader.json';
+import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Import Environment Variables
-// Direct API Configurations
 const ROBOFLOW_API_URL = "https://detect.roboflow.com/potholes-detection-qwkkc/5";
 const ROBOFLOW_API_KEY = "06CdohBqfvMermFXu3tL";
+
+// Replace with your valid Google Maps API Key (ensure Geocoding API is enabled and billing is set up)
 const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg";
 
 const { width, height } = Dimensions.get('window');
-
 let locationData: Location.LocationObject;
 
 export default function Camera() {
-  const [isLoading, setIsLoading] = useState(true); // Loading state for splash
+  const [isLoading, setIsLoading] = useState(true);
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
-  const [isProcessing, setIsProcessing] = useState(false); // State to control the loader visibility
-  const [modalVisible, setModalVisible] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
   const navigation = useNavigation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
-  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading duration equal to animation's length
     const timer = setTimeout(() => {
       setIsLoading(false);
       Animated.timing(fadeAnim, {
@@ -45,7 +52,7 @@ export default function Camera() {
         duration: 800,
         useNativeDriver: true,
       }).start();
-    }, 1500); // Adjust this duration based on your animation
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -89,13 +96,13 @@ export default function Camera() {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 1,
         aspect: [4, 3],
       });
 
-      if (!result.canceled && result.assets.length > 0) {
+      if (!result.canceled && result.assets?.length > 0) {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
@@ -109,13 +116,13 @@ export default function Camera() {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes:['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
       });
 
-      if (!result.canceled && result.assets.length > 0) {
+      if (!result.canceled && result.assets?.length > 0) {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
@@ -125,6 +132,24 @@ export default function Camera() {
 
   const retakePhoto = () => {
     setImage(null);
+  };
+
+  const getAddressFromCoordinates = async (latitude: number, longitude: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const addressData = await response.json();
+      if (addressData.status === 'OK' && addressData.results && addressData.results.length > 0) {
+        return addressData.results[0].formatted_address;
+      } else {
+        console.error('Geocoding API Error:', addressData.status);
+        return 'Address not found';
+      }
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      return 'Address not found';
+    }
   };
 
   const detectPothole = async () => {
@@ -142,7 +167,6 @@ export default function Camera() {
     setUploading(true);
 
     try {
-      // Process with Roboflow API
       const imageBase64 = await FileSystem.readAsStringAsync(image, {
         encoding: FileSystem.EncodingType.Base64,
       });
@@ -163,24 +187,16 @@ export default function Camera() {
         throw new Error('No potholes detected in the image');
       }
 
-      // Get highest confidence prediction
       const highestConfidence = Math.max(
         ...roboflowResponse.data.predictions.map((p: any) => p.confidence)
       );
       const confidencePercentage = highestConfidence * 100;
 
-      if (confidencePercentage > 50) {
-        Alert.alert(
-          "Detection Approved",
-          `Pothole detected with confidence ${confidencePercentage.toFixed(2)}%.`,
-          [{ text: "OK" }]
-        );
-      } else {
+      if (confidencePercentage <= 50) {
         Alert.alert("No Potholes Detected", "Detection confidence is below 50%.", [{ text: "OK" }]);
         return;
       }
 
-      // Get location
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
@@ -188,46 +204,23 @@ export default function Camera() {
           'Location permission is needed to mark pothole locations accurately.',
           [{ text: 'OK' }]
         );
-        setIsProcessing(false);
         return;
       }
 
-      try {
-        locationData = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High
-        });
-        
-        // Verify location data
-        if (!locationData?.coords?.latitude || !locationData?.coords?.longitude) {
-          throw new Error('Invalid location data received');
-        }
-        
-      } catch (error) {
-        console.error('Location error:', error);
-        Alert.alert(
-          'Location Error',
-          'Unable to get your current location. Please check your location settings and try again.',
-          [{ text: 'OK' }]
-        );
-        setIsProcessing(false);
-        return;
+      locationData = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High
+      });
+
+      if (!locationData?.coords?.latitude || !locationData?.coords?.longitude) {
+        throw new Error('Invalid location data received');
       }
 
-      // Get address
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${locationData.coords.latitude},${locationData.coords.longitude}&key=${GOOGLE_MAPS_API_KEY}`
-      );
-      const addressData = await response.json();
-      
-      let address = '';
-      if (addressData.status === 'OK' && addressData.results && addressData.results.length > 0) {
-        address = addressData.results[0].formatted_address;
-      } else {
-        console.error('Geocoding API Error:', addressData.status);
-        address = 'Address not found';
+      const address = await getAddressFromCoordinates(locationData.coords.latitude, locationData.coords.longitude);
+
+      if (address === 'Address not found') {
+        Alert.alert('Location Error', 'Unable to retrieve address for the detected pothole.', [{ text: 'OK' }]);
       }
 
-      
       const formData = new FormData();
       const imageFile = {
         uri: image,
@@ -240,7 +233,6 @@ export default function Camera() {
       formData.append('address', address);
       formData.append('detectionResultPercentage', confidencePercentage.toString());
 
-      
       const uploadResponse = await fetch('http://10.51.11.170:3000/api/v1/pothole/upload', {
         method: 'POST',
         body: formData,
@@ -252,29 +244,19 @@ export default function Camera() {
       const result = await uploadResponse.json();
 
       if (result.success) {
-        setModalVisible(true);
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 5,
-          useNativeDriver: true,
-        }).start();
-
-        setTimeout(() => {
-          setModalVisible(false);
-          scaleAnim.setValue(0);
-          router.push({
-            pathname: "/maps",
-            params: { 
-              result: JSON.stringify({ 
-                latitude: locationData.coords.latitude,
-                longitude: locationData.coords.longitude,
-                address: address,
-                detectionResultPercentage: confidencePercentage,
-                aiResults: roboflowResponse.data.predictions
-              })
-            }
-          });
-        }, 2000);
+        // On success, navigate to maps page
+        router.push({
+          pathname: "/maps",
+          params: {
+            result: JSON.stringify({
+              latitude: locationData.coords.latitude,
+              longitude: locationData.coords.longitude,
+              address: address,
+              detectionResultPercentage: confidencePercentage,
+              aiResults: roboflowResponse.data.predictions
+            })
+          }
+        });
       } else {
         throw new Error(result.message || 'Upload failed');
       }
@@ -282,7 +264,7 @@ export default function Camera() {
     } catch (error: any) {
       const errorMessage = error.message.includes('No potholes detected')
         ? 'No potholes were detected in the image. Please try with a different image.'
-        : `Upload failed: ${error.message}`;
+        : `Error: ${error.message}`;
       Alert.alert("Error", errorMessage);
     } finally {
       setUploading(false);
@@ -307,7 +289,7 @@ export default function Camera() {
     return (
       <View style={[styles.splashContainer, { backgroundColor: '#fff' }]}>
         <LottieView
-          source={camLoaderAnimation} // Show initial loading animation
+          source={camLoaderAnimation} // initial loading animation
           autoPlay
           loop
           style={styles.lottie}
@@ -355,11 +337,12 @@ export default function Camera() {
       {isProcessing && (
         <View style={styles.uploadingOverlay}>
           <LottieView
-            source={processingAnimation} // Show processing animation during image processing
+            source={processingAnimation} // loader animation during processing
             autoPlay
             loop
             style={styles.processingLottie}
           />
+          {/* No processing text, just the loader */}
         </View>
       )}
     </View>
@@ -383,9 +366,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F0F4F7',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 30,
+    paddingHorizontal: 20,
   },
   header: {
     width: '100%',
@@ -422,10 +406,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
   },
   galleryButton: {
     flex: 1,
@@ -437,10 +417,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
   },
   captureButtonText: {
     color: '#fff',
@@ -462,12 +438,11 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     width: '100%',
   },
   retakeButton: {
     flex: 1,
-    backgroundColor: '#FF8C00', // Dark Orange
+    backgroundColor: '#FF8C00',
     paddingVertical: 12,
     marginRight: 10,
     borderRadius: 30,
@@ -478,7 +453,7 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: '#32CD32', // Lime Green
+    backgroundColor: '#32CD32',
     paddingVertical: 12,
     marginLeft: 10,
     borderRadius: 30,
@@ -502,11 +477,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(240, 244, 247, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  uploadingText: {
-    marginTop: 15,
-    fontSize: 18,
-    color: '#333',
-    fontWeight: '600',
   },
 });

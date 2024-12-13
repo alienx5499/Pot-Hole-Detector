@@ -20,125 +20,183 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Direct API Key (Hardcoded)
-const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg";
+const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg"; // Replace with your valid API key
 const { width, height } = Dimensions.get('window');
-const Maps = () => {
+
+interface ParsedResult {
+  latitude: string | number;
+  longitude: string | number;
+  aiResults?: any[];
+}
+
+// Confidence color logic based on confidence value
+const getConfidenceColor = (confidence: number): string => {
+  if (confidence >= 0.8) return '#4CAF50'; // High confidence: green
+  if (confidence >= 0.6) return '#FFC107'; // Medium confidence: amber
+  return '#F44336'; // Low confidence: red
+};
+
+export default function Maps() {
   const params = useLocalSearchParams();
   const router = useRouter();
+
+  // State variables
   const [loading, setLoading] = useState(true);
-  const [location, setLocation] = useState<Region | null>(null);
+  const [potholeLocation, setPotholeLocation] = useState<Region | null>(null);
+  const [userLocation, setUserLocation] = useState<Region | null>(null);
   const [address, setAddress] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(0)).current;
   const [aiResults, setAiResults] = useState<any[]>([]);
 
+  // Animation references
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const mapRef = useRef<MapView>(null);
+
   useEffect(() => {
-    checkAuthAndLocation();
+    checkAuthAndInitialize();
   }, []);
 
-  const getAddressFromCoords = async (lat: number, lng: number) => {
+  // Check authentication and initialize location + data
+  const checkAuthAndInitialize = async () => {
     try {
-      if (!lat || !lng) {
-        console.error('Invalid coordinates:', { lat, lng });
-        setAddress('Invalid coordinates');
-        return;
-      }
-
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
-      );
-      
-      const data = await response.json();
-      
-      if (data.status === 'REQUEST_DENIED') {
-        throw new Error('Google Maps API key is invalid or missing required permissions');
-      }
-      
-      if (data.status === 'OK' && data.results && data.results.length > 0) {
-        setAddress(data.results[0].formatted_address);
-      } else {
-        throw new Error(`Geocoding failed: ${data.status}`);
-      }
-    } catch (error: any) {
-      console.error('Geocoding error:', error);
-      setAddress('Could not determine address');
-    }
-  };
-
-  const checkAuthAndLocation = async () => {
-    try {
+      // Check token
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
         router.replace('/auth');
         return;
       }
 
+      // Check location permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required.');
+        Alert.alert('Permission Denied', 'Location permission is required to view the map.');
         return;
       }
 
-      if (params.result) {
-        try {
-          const parsedResult = typeof params.result === 'string' 
-            ? JSON.parse(params.result)
-            : params.result;
-          
-          if (!parsedResult.latitude || !parsedResult.longitude) {
-            throw new Error('Missing coordinates in result');
-          }
-
-          const lat = parseFloat(parsedResult.latitude);
-          const lng = parseFloat(parsedResult.longitude);
-          
-          if (isNaN(lat) || isNaN(lng)) {
-            throw new Error('Invalid coordinates received');
-          }
-
-          const newLocation = {
-            latitude: lat,
-            longitude: lng,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          };
-          setLocation(newLocation);
-          
-          await getAddressFromCoords(newLocation.latitude, newLocation.longitude);
-
-          if (parsedResult.aiResults) {
-            setAiResults(parsedResult.aiResults);
-          }
-        } catch (error) {
-          throw new Error('Failed to process location data');
-        }
-      } else {
-        const currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High
-        });
-
-        if (!currentLocation?.coords?.latitude || !currentLocation?.coords?.longitude) {
-          throw new Error('Invalid location data received');
-        }
-
-        const newLocation = {
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        };
-        setLocation(newLocation);
-        await getAddressFromCoords(newLocation.latitude, newLocation.longitude);
+      // Fetch user's current location first
+      const currentLoc = await fetchCurrentLocation();
+      if (currentLoc) {
+        setUserLocation(currentLoc);
       }
+
+      // If we have result params (from previous screen), use them for pothole location
+      if (params.result) {
+        await handleIncomingParams(params.result);
+      }
+
     } catch (error: any) {
-      console.error('Location Error:', error);
-      Alert.alert('Error', error.message || 'Failed to get location. Please check your settings.');
+      console.error('Initialization Error:', error);
+      Alert.alert('Error', error.message || 'Failed to initialize map view.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleIncomingParams = async (resultParam: any) => {
+    try {
+      const parsedResult: ParsedResult = typeof resultParam === 'string' ? JSON.parse(resultParam) : resultParam;
+
+      if (!parsedResult.latitude || !parsedResult.longitude) {
+        throw new Error('Received invalid coordinates from previous screen.');
+      }
+
+      const lat = parseFloat(parsedResult.latitude.toString());
+      const lng = parseFloat(parsedResult.longitude.toString());
+
+      if (isNaN(lat) || isNaN(lng)) {
+        throw new Error('Coordinates are not valid numbers.');
+      }
+
+      const newLocation: Region = {
+        latitude: lat,
+        longitude: lng,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+      setPotholeLocation(newLocation);
+
+      const fetchedAddress = await fetchAddress(newLocation.latitude, newLocation.longitude);
+      setAddress(fetchedAddress);
+
+      if (parsedResult.aiResults && Array.isArray(parsedResult.aiResults)) {
+        setAiResults(parsedResult.aiResults);
+      }
+
+      // If we have a pothole location, center map on it
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(newLocation, 1000);
+      }
+
+    } catch (error: any) {
+      console.error('Params processing error:', error);
+      Alert.alert('Error', 'Failed to process location data from previous screen.');
+    }
+  };
+
+  const fetchCurrentLocation = async (): Promise<Region | null> => {
+    const currentLocation = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High
+    });
+
+    if (!currentLocation?.coords?.latitude || !currentLocation?.coords?.longitude) {
+      Alert.alert('Error', 'Unable to retrieve current location.');
+      return null;
+    }
+
+    const newLocation: Region = {
+      latitude: currentLocation.coords.latitude,
+      longitude: currentLocation.coords.longitude,
+      latitudeDelta: 0.0922,
+      longitudeDelta: 0.0421,
+    };
+
+    // If there's no pothole location, set address from user's location
+    if (!potholeLocation) {
+      const fetchedAddress = await fetchAddress(newLocation.latitude, newLocation.longitude);
+      setAddress(fetchedAddress);
+    }
+
+    return newLocation;
+  };
+
+  // Fetch address using coordinates via Google Geocoding API
+  const fetchAddress = async (lat: number, lng: number): Promise<string> => {
+    try {
+      if (!lat || !lng) throw new Error('Invalid coordinates for address lookup.');
+
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.status === 'REQUEST_DENIED') {
+        throw new Error('Check your Google Maps API key and permissions.');
+      }
+
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
+        return data.results[0].formatted_address;
+      } else {
+        console.warn('Geocoding failed:', data.status);
+        return 'Could not determine address';
+      }
+
+    } catch (error: any) {
+      console.error('Geocoding error:', error);
+      return 'Address not found';
+    }
+  };
+
+  // When user moves the map, update address if showing pothole location
+  const onRegionChangeComplete = async (newRegion: Region) => {
+    // If we are centered on the pothole location, update the address based on that region
+    // If no pothole location, then this region might just be user location. Either way:
+    if (newRegion) {
+      const fetchedAddress = await fetchAddress(newRegion.latitude, newRegion.longitude);
+      setAddress(fetchedAddress);
+    }
+  };
+
+  // Submitting pothole info and navigate to dashboard
   const handleSubmit = () => {
     setModalVisible(true);
     Animated.spring(scaleAnim, {
@@ -154,35 +212,43 @@ const Maps = () => {
     }, 2000);
   };
 
+  // Center map on user's current location
+  const centerOnUserLocation = async () => {
+    const currentLoc = await fetchCurrentLocation();
+    if (currentLoc && mapRef.current) {
+      setUserLocation(currentLoc);
+      mapRef.current.animateToRegion(currentLoc, 1000);
+    }
+  };
+
+  // AI Results Sheet Component
   const AiResultsSheet = () => (
     <View style={styles.aiResultsSheet}>
       <View style={styles.aiResultsHeader}>
         <MaterialIcons name="science" size={24} color="#333" />
         <Text style={styles.aiResultsTitle}>AI Detection Results</Text>
       </View>
-      
+
       {aiResults.map((result, index) => (
         <View key={index} style={styles.aiResultItem}>
           <View style={styles.resultRow}>
             <Text style={styles.resultLabel}>Pothole Type:</Text>
             <Text style={styles.resultValue}>{result.class}</Text>
           </View>
-          
+
           <View style={styles.resultRow}>
             <Text style={styles.resultLabel}>Confidence:</Text>
             <View style={styles.confidenceContainer}>
-              <View 
+              <View
                 style={[
-                  styles.confidenceBar, 
-                  { 
-                    width: `${result.confidence * 100}%`,
-                    backgroundColor: getConfidenceColor(result.confidence)
-                  }
-                ]} 
+                  styles.confidenceBar,
+                  {
+                    width: `${(result.confidence * 100).toFixed(1)}%`,
+                    backgroundColor: getConfidenceColor(result.confidence),
+                  },
+                ]}
               />
-              <Text style={styles.confidenceText}>
-                {(result.confidence * 100).toFixed(1)}%
-              </Text>
+              <Text style={styles.confidenceText}>{(result.confidence * 100).toFixed(1)}%</Text>
             </View>
           </View>
 
@@ -198,16 +264,6 @@ const Maps = () => {
       ))}
     </View>
   );
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return '#4CAF50';
-    if (confidence >= 0.6) return '#FFC107';
-    return '#F44336';
-  };
-
-  const onRegionChangeComplete = async (newRegion: Region) => {
-    await getAddressFromCoords(newRegion.latitude, newRegion.longitude);
-  };
 
   if (loading) {
     return (
@@ -225,25 +281,46 @@ const Maps = () => {
 
   return (
     <View style={styles.container}>
-      {location ? (
+      {(potholeLocation || userLocation) ? (
         <MapView
+          ref={mapRef}
           style={styles.map}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-          initialRegion={location}
+          initialRegion={potholeLocation || userLocation || {
+            latitude: 37.7749,
+            longitude: -122.4194,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
           onRegionChangeComplete={onRegionChangeComplete}
         >
-          <Marker
-            coordinate={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-            }}
-            title="Pothole Location"
-            description={address}
-          />
+          {/* Marker for user's current location (red pin) */}
+          {userLocation && (
+            <Marker
+              coordinate={{
+                latitude: userLocation.latitude,
+                longitude: userLocation.longitude,
+              }}
+              title="You are here"
+              pinColor="red"
+            />
+          )}
+
+          {/* Marker for pothole location (default pin color) */}
+          {potholeLocation && (
+            <Marker
+              coordinate={{
+                latitude: potholeLocation.latitude,
+                longitude: potholeLocation.longitude,
+              }}
+              title="Pothole Location"
+              description={address}
+            />
+          )}
         </MapView>
       ) : (
         <View style={styles.loadingContainer}>
-          <Text>Getting location...</Text>
+          <Text>Determining location...</Text>
         </View>
       )}
 
@@ -254,20 +331,28 @@ const Maps = () => {
           {address || (
             <View style={styles.loadingAddressContainer}>
               <ActivityIndicator size="small" color="#007AFF" />
-              <Text style={styles.loadingAddressText}>Getting address...</Text>
+              <Text style={styles.loadingAddressText}>Fetching address...</Text>
             </View>
           )}
         </Text>
-        <TouchableOpacity 
-          style={styles.submitButton} 
+        <TouchableOpacity
+          style={styles.submitButton}
           onPress={handleSubmit}
-          disabled={!address || address === 'Loading address...'}
+          disabled={!address || address.includes('not found') || address.includes('Could not')}
         >
           <Text style={styles.submitButtonText}>Submit</Text>
           <MaterialIcons name="navigate-next" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
+      {/* Floating button to fetch current location */}
+      <View style={styles.currentLocationButtonContainer}>
+        <TouchableOpacity style={styles.currentLocationButton} onPress={centerOnUserLocation}>
+          <Ionicons name="locate" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Success Modal */}
       <Modal
         transparent={true}
         visible={modalVisible}
@@ -287,8 +372,9 @@ const Maps = () => {
       </Modal>
     </View>
   );
-};
+}
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -304,6 +390,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
+    color: '#333',
   },
   loader: {
     width: 100,
@@ -312,7 +399,7 @@ const styles = StyleSheet.create({
   bottomSheet: {
     position: 'absolute',
     bottom: 0,
-    width: width,
+    width,
     backgroundColor: '#fff',
     padding: 20,
     borderTopLeftRadius: 20,
@@ -326,6 +413,17 @@ const styles = StyleSheet.create({
   addressText: {
     fontSize: 16,
     marginBottom: 10,
+    color: '#333',
+    fontWeight: '600',
+  },
+  loadingAddressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingAddressText: {
+    marginLeft: 8,
+    color: '#666',
+    fontSize: 14,
   },
   submitButton: {
     backgroundColor: '#007AFF',
@@ -339,12 +437,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     marginRight: 5,
+    fontWeight: '600',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -355,6 +453,8 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 18,
     marginTop: 10,
+    fontWeight: '600',
+    color: '#333',
   },
   lottie: {
     width: 100,
@@ -368,12 +468,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 15,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
     maxHeight: height * 0.4,
+    elevation: 5,
   },
   aiResultsHeader: {
     flexDirection: 'row',
@@ -385,7 +481,7 @@ const styles = StyleSheet.create({
   },
   aiResultsTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#333',
     marginLeft: 10,
   },
@@ -422,6 +518,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
+    position: 'relative',
   },
   confidenceBar: {
     position: 'absolute',
@@ -437,15 +534,15 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     zIndex: 1,
   },
-  loadingAddressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  currentLocationButtonContainer: {
+    position: 'absolute',
+    bottom: 120,
+    right: 20,
   },
-  loadingAddressText: {
-    marginLeft: 8,
-    color: '#666',
-    fontSize: 14,
+  currentLocationButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 30,
+    padding: 10,
+    elevation: 5,
   },
 });
-
-export default Maps;
