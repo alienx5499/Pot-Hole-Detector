@@ -5,6 +5,9 @@ import userMiddleware from "../middlewares";
 import multer from "multer";
 import path from "path";
 import mongoose from "mongoose";
+import { rwClient } from '../config/twitter';
+import fs from 'fs';
+import fetch from 'node-fetch';
 
 const potholeRouter = Router();
 
@@ -68,7 +71,7 @@ potholeRouter.post('/upload',
             return;
         }
 
-        const { latitude, longitude, address, detectionResultPercentage } = req.body;
+        const { latitude, longitude, address, detectionResultPercentage, shareOnTwitter } = req.body;
         if (!latitude || !longitude || !detectionResultPercentage) {
             res.status(400).json({ 
               success: false, 
@@ -87,6 +90,33 @@ potholeRouter.post('/upload',
             },
             detectionResultPercentage: parseFloat(detectionResultPercentage)
         });
+
+        // If user wants to share on Twitter
+        if (shareOnTwitter === 'true') {
+            try {
+                const user = await UserModel.findById(req.userId);
+                
+                // Create tweet text
+                const tweetText = `🚨 Pothole Alert! 📍\n
+                    Reported by: ${user?.name}\n
+                    Location: ${address}\n
+                    Confidence: ${detectionResultPercentage}%\n
+                    #PotholeAlert #RoadSafety`;
+
+                // Upload image to Twitter
+                const mediaId = await rwClient.v1.uploadMedia(req.file.path, { mimeType: 'image/jpeg' });
+
+                // Post tweet with image
+                await rwClient.v2.tweet({
+                    text: tweetText,
+                    media: { media_ids: [mediaId] }
+                });
+
+            } catch (twitterError) {
+                console.error('Twitter posting error:', twitterError);
+                // Don't fail the whole request if Twitter posting fails
+            }
+        }
 
         res.json({ success: true, report });
     } catch (error) {
@@ -225,5 +255,40 @@ potholeRouter.get('/report/:id', userMiddleware, async (req: CustomRequest, res:
         });
     }
 });
+
+
+potholeRouter.post('/share-twitter',
+  userMiddleware,
+  async (req: CustomRequest, res: Response) => {
+    try {
+      const { location, confidence } = req.body;
+      
+      const user = await UserModel.findById(req.userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Creating tweet text with better formatting
+      const tweetText = `🚨 Pothole Alert! 📍\nReported by: ${user.name}\nLocation: ${location}\nConfidence: ${Number(confidence).toFixed(2)}%\n#PotholeAlert #RoadSafety`;
+
+      // Posting tweet without image for v0
+      await rwClient.v2.tweet({
+        text: tweetText
+      });
+
+      res.json({ 
+        success: true, 
+        message: 'Successfully shared on Twitter' 
+      });
+    } catch (error: any) {
+      console.error('Share to Twitter error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error sharing to Twitter',
+        error: error.message
+      });
+    }
+  }
+);
 
 export default potholeRouter;

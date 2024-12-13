@@ -191,8 +191,7 @@ export default function Dashboard() {
       </View>
     </View>
   );
-
-  // Define the Header Component for FlatList
+ 
   const ListHeader = () => (
     <>
       {/* Header */}

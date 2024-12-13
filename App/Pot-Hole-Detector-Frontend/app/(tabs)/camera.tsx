@@ -320,6 +320,7 @@ export default function Camera() {
       ) : (
         <View style={styles.previewContainer}>
           <Image source={{ uri: image }} style={styles.previewImage} />
+          
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
               <Ionicons name="refresh-circle-outline" size={24} color="#fff" />
