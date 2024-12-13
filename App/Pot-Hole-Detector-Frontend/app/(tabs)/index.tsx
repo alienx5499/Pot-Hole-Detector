@@ -75,7 +75,7 @@ export default function Index() {
         />
 
         <View style={styles.contentCard}>
-          <Text style={styles.title}>Pot-Hole-Detector</Text>
+          <Text style={styles.title}>Welcome</Text>
           <Text style={styles.tagline}>Empowering Safer Roads</Text>
 
           <Text style={styles.description}>
