@@ -8,7 +8,7 @@ const app = express();
 
 // Enable CORS
 app.use(cors({
-  origin: '*', // Be more specific in production
+  origin: '*',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
