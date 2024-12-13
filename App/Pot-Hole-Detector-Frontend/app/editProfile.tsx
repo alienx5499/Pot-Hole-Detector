@@ -11,10 +11,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+
+const DEFAULT_PROFILE_PICTURE = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwyXIh0_peK1rr_KtfSPpK50oH0zZgwutkrw&s';
 
 const EditProfile = () => {
   const router = useRouter();
@@ -23,21 +27,31 @@ const EditProfile = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [profilePicture, setProfilePicture] = useState('');
+  const [profilePicture, setProfilePicture] = useState(DEFAULT_PROFILE_PICTURE);
 
-  // Load user data from AsyncStorage when the component mounts
+  // Load user data from backend when the component mounts
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const storedProfilePicture = await AsyncStorage.getItem('userProfilePicture');
-        const storedName = await AsyncStorage.getItem('userName');
-        const storedEmail = await AsyncStorage.getItem('userEmail');
-        const storedPhone = await AsyncStorage.getItem('userPhone');
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          router.replace('/auth');
+          return;
+        }
 
-        setProfilePicture(storedProfilePicture || '');
-        setName(storedName || '');
-        setEmail(storedEmail || '');
-        setPhone(storedPhone || '');
+        const response = await axios.get('https://pot-hole-detector.onrender.com/api/v1/auth/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (response.data.success) {
+          const user = response.data.user;
+          setName(user.name || '');
+          setEmail(user.email || '');
+          setPhone(user.phone || '');
+          setProfilePicture(user.profilePicture || DEFAULT_PROFILE_PICTURE);
+        }
       } catch (error) {
         console.error('Error loading user data:', error);
         Alert.alert('Error', 'Failed to load user data. Please try again.');
@@ -58,7 +72,6 @@ const EditProfile = () => {
       Alert.alert('Validation Error', 'Email cannot be empty.');
       return;
     }
-    // Simple email regex for validation
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
       Alert.alert('Validation Error', 'Please enter a valid email address.');
@@ -70,17 +83,47 @@ const EditProfile = () => {
     }
 
     try {
-      // Save updated data to AsyncStorage
-      await AsyncStorage.setItem('userName', name);
-      await AsyncStorage.setItem('userEmail', email);
-      await AsyncStorage.setItem('userPhone', phone);
-      await AsyncStorage.setItem('userProfilePicture', profilePicture);
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.replace('/auth');
+        return;
+      }
 
-      Alert.alert('Success', 'Profile updated successfully.');
-      router.back(); // Navigate back to the Profile screen
-    } catch (error) {
+      const response = await axios.put(
+        'https://pot-hole-detector.onrender.com/api/v1/auth/profile',
+        {
+          name,
+          email,
+          phone,
+          profilePicture
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Save updated data to AsyncStorage for local access
+        await AsyncStorage.multiSet([
+          ['userName', name],
+          ['userEmail', email],
+          ['userPhone', phone],
+          ['userProfilePicture', profilePicture],
+        ]);
+
+        Alert.alert('Success', 'Profile updated successfully.');
+        router.back();
+      } else {
+        Alert.alert('Error', response.data.message || 'Failed to update profile');
+      }
+    } catch (error: any) {
       console.error('Error saving profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to update profile. Please try again.'
+      );
     }
   };
 
@@ -99,7 +142,7 @@ const EditProfile = () => {
 
         {/* Profile Picture Input */}
         {/* Optional: Implement image picker for profile picture */}
-        {/* For simplicity, we'll allow users to input a URL */}
+        {/* For v0, we'll allow users to input a URL */}
         <View style={styles.inputContainer}>
           <Ionicons name="image-outline" size={24} color="#007AFF" style={styles.icon} />
           <TextInput
@@ -175,6 +218,13 @@ const EditProfile = () => {
           <Ionicons name="close-circle-outline" size={20} color="#fff" style={styles.buttonIcon} />
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
+
+        {/* Add Image preview */}
+        <Image
+          source={{ uri: profilePicture }}
+          style={styles.profilePreview}
+          onError={() => setProfilePicture(DEFAULT_PROFILE_PICTURE)}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -263,5 +313,12 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginRight: 10,
+  },
+  profilePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 20,
+    alignSelf: 'center',
   },
 });

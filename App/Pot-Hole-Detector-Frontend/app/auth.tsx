@@ -111,14 +111,26 @@ export default function Auth() {
 
       const data = await response.json();
 
-      if (data.success) {
-        await AsyncStorage.setItem('userToken', data.token);
+      if (response.ok && data.success) {
+        // Store user data in AsyncStorage
+        await AsyncStorage.multiSet([
+          ['userToken', data.token],
+          ['userName', data.user?.name || ''],
+          ['userEmail', data.user?.email || ''],
+        ]);
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Error', data.message || 'Authentication failed');
+        Alert.alert(
+          'Authentication Failed', 
+          data.message || 'Please check your credentials and try again'
+        );
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to connect to server');
+      console.error('Auth error:', error);
+      Alert.alert(
+        'Connection Error', 
+        'Failed to connect to server. Please check your internet connection.'
+      );
     } finally {
       setLoading(false);
     }

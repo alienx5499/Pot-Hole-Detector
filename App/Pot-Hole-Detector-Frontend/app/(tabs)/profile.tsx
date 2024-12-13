@@ -15,12 +15,14 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
+const DEFAULT_PROFILE_PICTURE = 'https://imgs.search.brave.com/uLARhH16ug7xgUl3msl3yHs0DCWkofOAnLVeWQ-poy0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/a2luZHBuZy5jb20v/cGljYy9tLzI1Mi0y/NTI0Njk1X2R1bW15/LXByb2ZpbGUtaW1h/Z2UtanBnLWhkLXBu/Zy1kb3dubG9hZC5w/bmc';
+
 const Profile = () => {
   const router = useRouter();
 
   // State variables for user data
   const [userData, setUserData] = useState({
-    profilePicture: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwyXIh0_peK1rr_KtfSPpK50oH0zZgwutkrw&s',
+    profilePicture: DEFAULT_PROFILE_PICTURE,
     name: '',
     level: 'Beginner',
     rating: 0,
@@ -46,7 +48,7 @@ const Profile = () => {
       if (response.data.success) {
         const user = response.data.user;
         setUserData({
-          profilePicture: user.profilePicture || userData.profilePicture,
+          profilePicture: user.profilePicture || DEFAULT_PROFILE_PICTURE,
           name: user.name || '',
           level: calculateUserLevel(user.reports || 0), // Calculate level based on number of reports
           rating: user.rating || 0,
@@ -127,8 +129,16 @@ const Profile = () => {
       {/* Profile Header */}
       <View style={styles.header}>
         <Image
-          source={{ uri: userData.profilePicture }}
+          source={{ 
+            uri: userData.profilePicture 
+          }}
           style={styles.profileImage}
+          onError={() => {
+            setUserData(prev => ({
+              ...prev,
+              profilePicture: DEFAULT_PROFILE_PICTURE
+            }));
+          }}
         />
         <Text style={styles.name}>{userData.name}</Text>
       </View>
