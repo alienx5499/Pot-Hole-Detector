@@ -7,7 +7,11 @@ const UserSchema = new Schema({
     name : {type : String,unique : true,required : true},
     email : {type : String,unique :true,required : true},
     passwordHash : {type : String,required : true},
-    isGuest: { type: Boolean, default: false }
+    isGuest: { type: Boolean, default: false },
+    profilePicture: { type: String },
+    phone: { type: String },
+    rating: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now }
 })
 const ReportSchema = new mongoose.Schema({
     userId: { type: ObjectId, ref: 'User', required: true },

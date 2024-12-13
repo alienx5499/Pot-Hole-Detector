@@ -13,75 +13,80 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+
+const DEFAULT_PROFILE_PICTURE = 'https://imgs.search.brave.com/uLARhH16ug7xgUl3msl3yHs0DCWkofOAnLVeWQ-poy0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/a2luZHBuZy5jb20v/cGljYy9tLzI1Mi0y/NTI0Njk1X2R1bW15/LXByb2ZpbGUtaW1h/Z2UtanBnLWhkLXBu/Zy1kb3dubG9hZC5w/bmc';
 
 const Profile = () => {
   const router = useRouter();
 
   // State variables for user data
   const [userData, setUserData] = useState({
-    profilePicture: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwyXIh0_peK1rr_KtfSPpK50oH0zZgwutkrw&s', // Default placeholder
+    profilePicture: DEFAULT_PROFILE_PICTURE,
     name: '',
-    level: '',
+    level: 'Beginner',
     rating: 0,
     email: '',
     phone: '',
   });
 
-  // Load user data from AsyncStorage when the component mounts
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const storedProfilePicture = await AsyncStorage.getItem('userProfilePicture');
-        const storedName = await AsyncStorage.getItem('userName');
-        const storedLevel = await AsyncStorage.getItem('userLevel');
-        const storedRating = await AsyncStorage.getItem('userRating');
-        const storedEmail = await AsyncStorage.getItem('userEmail');
-        const storedPhone = await AsyncStorage.getItem('userPhone');
-
-        setUserData({
-          profilePicture: storedProfilePicture || userData.profilePicture,
-          name: storedName || 'Steven Gerrard',
-          level: storedLevel || 'Advanced',
-          rating: storedRating ? parseFloat(storedRating) : 4.9,
-          email: storedEmail || 'stevengerrard@liverpool.com',
-          phone: storedPhone || '+91 7908699436',
-        });
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        Alert.alert('Error', 'Failed to load user data. Please try again.');
+  // Function to fetch user data from backend
+  const fetchUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.replace('/auth');
+        return;
       }
-    };
 
-    loadUserData();
+      const response = await axios.get(`https://pot-hole-detector.onrender.com/api/v1/auth/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        const user = response.data.user;
+        setUserData({
+          profilePicture: user.profilePicture || DEFAULT_PROFILE_PICTURE,
+          name: user.name || '',
+          level: calculateUserLevel(user.reports || 0), // Calculate level based on number of reports
+          rating: user.rating || 0,
+          email: user.email || '',
+          phone: user.phone || '',
+        });
+
+        // Store user data in AsyncStorage
+        await AsyncStorage.multiSet([
+          ['userName', user.name],
+          ['userEmail', user.email],
+          ['userPhone', user.phone || ''],
+          ['userProfilePicture', user.profilePicture || userData.profilePicture],
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      Alert.alert('Error', 'Failed to load user data. Please try again.');
+    }
+  };
+
+  // Calculate user level based on number of reports
+  const calculateUserLevel = (reportsCount: number) => {
+    if (reportsCount >= 50) return 'Expert';
+    if (reportsCount >= 20) return 'Advanced';
+    if (reportsCount >= 5) return 'Intermediate';
+    return 'Beginner';
+  };
+
+  // Load user data when component mounts
+  useEffect(() => {
+    fetchUserData();
   }, []);
 
-  // Refresh user data when the screen is focused
+  // Refresh user data when screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      const refreshUserData = async () => {
-        try {
-          const storedProfilePicture = await AsyncStorage.getItem('userProfilePicture');
-          const storedName = await AsyncStorage.getItem('userName');
-          const storedLevel = await AsyncStorage.getItem('userLevel');
-          const storedRating = await AsyncStorage.getItem('userRating');
-          const storedEmail = await AsyncStorage.getItem('userEmail');
-          const storedPhone = await AsyncStorage.getItem('userPhone');
-
-          setUserData({
-            profilePicture: storedProfilePicture || userData.profilePicture,
-            name: storedName || 'Steven Gerrard',
-            level: storedLevel || 'Advanced',
-            rating: storedRating ? parseFloat(storedRating) : 4.9,
-            email: storedEmail || 'stevengerrard@liverpool.com',
-            phone: storedPhone || '+91 7908699436',
-          });
-        } catch (error) {
-          console.error('Error refreshing user data:', error);
-          Alert.alert('Error', 'Failed to refresh user data. Please try again.');
-        }
-      };
-
-      refreshUserData();
+      fetchUserData();
     }, [])
   );
 
@@ -99,7 +104,14 @@ const Profile = () => {
           text: 'Yes',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('userToken');
+              // Clear all stored data
+              await AsyncStorage.multiRemove([
+                'userToken',
+                'userName',
+                'userEmail',
+                'userPhone',
+                'userProfilePicture',
+              ]);
               router.replace('/auth');
             } catch (error) {
               console.error('Error logging out:', error);
@@ -117,8 +129,16 @@ const Profile = () => {
       {/* Profile Header */}
       <View style={styles.header}>
         <Image
-          source={{ uri: userData.profilePicture }}
+          source={{ 
+            uri: userData.profilePicture 
+          }}
           style={styles.profileImage}
+          onError={() => {
+            setUserData(prev => ({
+              ...prev,
+              profilePicture: DEFAULT_PROFILE_PICTURE
+            }));
+          }}
         />
         <Text style={styles.name}>{userData.name}</Text>
       </View>
