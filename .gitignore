@@ -1,0 +1,44 @@
+# Ignore .idea folder
+.idea/
+
+# Ignore environment files
+.env
+.env.local
+.env.*.local
+
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build directories
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Temporary files and folders
+temp/
+tmp/
+*.swp
+
+# IDE specific files
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# TypeScript build files
+*.tsbuildinfo
+
+# Expo files (for React Native projects)
+.expo/
+
+# Ignore uploads (for dynamic content)
+uploads/
