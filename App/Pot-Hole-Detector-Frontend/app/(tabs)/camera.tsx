@@ -244,7 +244,7 @@ export default function Camera() {
       const result = await uploadResponse.json();
 
       if (result.success) {
-        // On success, navigate to maps page
+        console.log('Upload Result:', result);
         router.push({
           pathname: "/maps",
           params: {
@@ -253,7 +253,8 @@ export default function Camera() {
               longitude: locationData.coords.longitude,
               address: address,
               detectionResultPercentage: confidencePercentage,
-              aiResults: roboflowResponse.data.predictions
+              aiResults: roboflowResponse.data.predictions,
+              report: result.report
             })
           }
         });
