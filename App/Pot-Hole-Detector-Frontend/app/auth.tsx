@@ -105,31 +105,53 @@ export default function Auth() {
 
       const response = await fetch(`https://pot-hole-detector.onrender.com/api/v1/auth${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(body),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Store user data in AsyncStorage
-        await AsyncStorage.multiSet([
-          ['userToken', data.token],
-          ['userName', data.user?.name || ''],
-          ['userEmail', data.user?.email || ''],
-        ]);
-        router.replace('/(tabs)');
+        try {
+          // Instead of clearing everything, just remove specific keys
+          const keysToRemove = [
+            'userToken',
+            'userName',
+            'userEmail',
+            'userPhone',
+            'userProfilePicture',
+            'isGuest'
+          ];
+          
+          await AsyncStorage.multiRemove(keysToRemove);
+
+          // Set new data
+          const itemsToSet: [string, string][] = [
+            ['userToken', data.token || ''],
+            ['userName', data.user?.name || ''],
+            ['userEmail', data.user?.email || ''],
+            ['isGuest', 'false']
+          ];
+
+          await AsyncStorage.multiSet(itemsToSet);
+          router.replace('/(tabs)');
+        } catch (storageError) {
+          // Even if storage fails, we can still proceed with navigation
+          router.replace('/(tabs)');
+        }
       } else {
         Alert.alert(
-          'Authentication Failed', 
+          'Authentication Failed',
           data.message || 'Please check your credentials and try again'
         );
       }
-    } catch (error) {
-      console.error('Auth error:', error);
+    } catch (error: any) {
       Alert.alert(
-        'Connection Error', 
-        'Failed to connect to server. Please check your internet connection.'
+        'Error',
+        error.message || 'Failed to connect to server. Please check your internet connection.'
       );
     } finally {
       setLoading(false);
@@ -147,13 +169,34 @@ export default function Auth() {
       const data = await response.json();
 
       if (data.success && data.token) {
-        await AsyncStorage.setItem('userToken', data.token);
-        await AsyncStorage.setItem('isGuest', 'true');
-        router.replace('/(tabs)');
+        try {
+          const keysToRemove = [
+            'userToken',
+            'userName',
+            'userEmail',
+            'userPhone',
+            'userProfilePicture',
+            'isGuest'
+          ];
+          
+          await AsyncStorage.multiRemove(keysToRemove);
+
+          await AsyncStorage.multiSet([
+            ['userToken', data.token],
+            ['userName', data.user?.name || ''],
+            ['userEmail', data.user?.email || ''],
+            ['isGuest', 'true'],
+          ]);
+          router.replace('/(tabs)');
+        } catch (storageError) {
+          console.error('Storage error:', storageError);
+          router.replace('/(tabs)');
+        }
       } else {
         Alert.alert('Error', data.message || 'Failed to sign in as guest');
       }
     } catch (error) {
+      console.error('Guest signin error:', error);
       Alert.alert('Error', 'Failed to connect to server');
     } finally {
       setLoading(false);

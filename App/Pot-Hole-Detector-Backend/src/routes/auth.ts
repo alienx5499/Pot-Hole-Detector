@@ -20,7 +20,7 @@ authRouter.post("/signup", async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
     const successSchema = signupSchema.safeParse(req.body);
-    if (!successSchema) {
+    if (!successSchema.success) {
       res.status(400).json({
         success: false,
         message: "Please enter correct body structure",
@@ -61,7 +61,12 @@ authRouter.post("/signup", async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       message: "User created successfully",
-      token: token
+      token: token,
+      user: {
+        name: user.name,
+        email: user.email,
+        isGuest: false
+      }
     });
   } catch (e) {
     console.error(e);
@@ -124,7 +129,8 @@ authRouter.post("/signin", async (req: Request, res: Response) => {
       token: token,
       user: {
         name: user.name,
-        email: user.email
+        email: user.email,
+        isGuest: false
       }
     });
   } catch (e) {
@@ -172,7 +178,8 @@ authRouter.post("/guest-signin", async (req: Request, res: Response) => {
       token: token,
       user: {
         name: guestUser.name,
-        email: guestUser.email
+        email: guestUser.email,
+        isGuest: true
       }
     });
   } catch (e) {
