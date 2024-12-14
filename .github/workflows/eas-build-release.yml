@@ -1,0 +1,96 @@
+name: EAS Build and Release APK
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on tags like v1.0.0
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: |
+          cd Pot-Hole-Detector-Frontend
+          npm install
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Authenticate with Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas login --token $EXPO_TOKEN
+
+      - name: Trigger EAS Build
+        id: trigger_build
+        run: |
+          cd front
+          BUILD_OUTPUT=$(eas build --platform android --profile production --non-interactive)
+          echo "$BUILD_OUTPUT"
+          # Extract Build ID from EAS CLI output
+          BUILD_ID=$(echo "$BUILD_OUTPUT" | jq -r '.[0].id')
+          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+
+      - name: Wait for Build Completion
+        run: |
+          cd front
+          echo "Waiting for build to complete..."
+          while true; do
+            STATUS=$(eas build:inspect --platform android --id $BUILD_ID --json | jq -r '.[0].status')
+            echo "Build Status: $STATUS"
+            if [[ "$STATUS" == "finished" ]]; then
+              echo "Build completed successfully."
+              break
+            elif [[ "$STATUS" == "errored" ]]; then
+              echo "Build failed."
+              exit 1
+            else
+              echo "Build in progress. Waiting for 60 seconds..."
+              sleep 60
+            fi
+          done
+
+      - name: Fetch Build Artifacts
+        run: |
+          cd front
+          BUILD_URL=$(eas build:inspect --platform android --id $BUILD_ID --json | jq -r '.[0].artifacts.android.apk.url')
+          echo "BUILD_URL=$BUILD_URL" >> $GITHUB_ENV
+
+      - name: Download APK
+        run: |
+          wget $BUILD_URL -O PotHole-${GITHUB_REF_NAME}.apk
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Automated build for ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./PotHole-${GITHUB_REF_NAME}.apk
+          asset_name: PotHole-${GITHUB_REF_NAME}.apk
+          asset_content_type: application/vnd.android.package-archive
