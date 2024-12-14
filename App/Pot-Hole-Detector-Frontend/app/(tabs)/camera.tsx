@@ -11,6 +11,7 @@ import {
   Dimensions,
   Animated,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRouter } from 'expo-router';
@@ -82,7 +83,7 @@ export default function Camera() {
     if (cameraStatus.status !== 'granted' || mediaStatus.status !== 'granted') {
       Alert.alert(
         'Permissions Required',
-        'Camera and Media Library access is required to detect potholes.',
+        'Camera and Media Library access are required to detect potholes.',
         [{ text: 'OK' }]
       );
       return false;
@@ -96,7 +97,7 @@ export default function Camera() {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes:'images',
+        mediaTypes: 'images',
         allowsEditing: true,
         quality: 1,
         aspect: [4, 3],
@@ -321,7 +322,7 @@ export default function Camera() {
       ) : (
         <View style={styles.previewContainer}>
           <Image source={{ uri: image }} style={styles.previewImage} />
-          
+
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
               <Ionicons name="refresh-circle-outline" size={24} color="#fff" />
@@ -344,7 +345,7 @@ export default function Camera() {
             loop
             style={styles.processingLottie}
           />
-          {/* No processing text, just the loader */}
+          {/* Removed the "Processing..." text as per your request */}
         </View>
       )}
     </View>
@@ -362,16 +363,16 @@ const styles = StyleSheet.create({
     height: 200,
   },
   processingLottie: {
-    width: 600,
-    height: 600,
+    width: 600, // Restored to original size
+    height: 600, // Restored to original size
   },
   container: {
     flex: 1,
     backgroundColor: '#F0F4F7',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 30,
     paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 30,
   },
   header: {
     width: '100%',
@@ -396,42 +397,50 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    width: '80%',
   },
   captureButton: {
     flex: 1,
     backgroundColor: '#FF6F61',
-    paddingVertical: 15,
+    paddingVertical: 20,
     marginRight: 10,
     borderRadius: 30,
     alignItems: 'center',
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'center',
     elevation: 4,
+    shadowColor: '#FF6F61',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
   galleryButton: {
     flex: 1,
     backgroundColor: '#4CA1AF',
-    paddingVertical: 15,
+    paddingVertical: 20,
     marginLeft: 10,
     borderRadius: 30,
     alignItems: 'center',
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'center',
     elevation: 4,
+    shadowColor: '#4CA1AF',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
   captureButtonText: {
     color: '#fff',
     fontSize: 16,
-    marginLeft: 10,
+    marginTop: 10,
     fontWeight: '600',
   },
   previewContainer: {
-    width: '100%',
+    width: '90%',
     alignItems: 'center',
   },
   previewImage: {
-    width: width * 0.9,
+    width: '100%',
     height: height * 0.5,
     borderRadius: 20,
     marginBottom: 20,
@@ -441,28 +450,37 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     width: '100%',
+    justifyContent: 'space-between',
   },
   retakeButton: {
     flex: 1,
     backgroundColor: '#FF8C00',
-    paddingVertical: 12,
+    paddingVertical: 15,
     marginRight: 10,
     borderRadius: 30,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
+    shadowColor: '#FF8C00',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
   confirmButton: {
     flex: 1,
     backgroundColor: '#32CD32',
-    paddingVertical: 12,
+    paddingVertical: 15,
     marginLeft: 10,
     borderRadius: 30,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
+    shadowColor: '#32CD32',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
   buttonText: {
     color: '#fff',

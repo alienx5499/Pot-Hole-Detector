@@ -1,4 +1,6 @@
 // app/_layout.tsx
+
+import 'react-native-get-random-values';
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,8 +12,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
-  const [AnimationFinish , setAnimationFinish] = useState(false);
-  const [isAppReady, setIsAppReady] = useState(false); 
+  const [AnimationFinish, setAnimationFinish] = useState(false);
+  const [isAppReady, setIsAppReady] = useState(false);
   const [fontsLoaded] = useFonts({
     // Add any custom fonts here
   });
@@ -33,7 +35,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (!isLoading && fontsLoaded) {
       SplashScreen.hideAsync();
-      setIsAppReady(true)
+      setIsAppReady(true);
     }
   }, [isLoading, fontsLoaded]);
 
@@ -53,4 +55,3 @@ export default function RootLayout() {
     </Stack>
   );
 }
-

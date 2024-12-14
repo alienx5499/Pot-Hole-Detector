@@ -20,7 +20,9 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Checkbox from 'expo-checkbox';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
+// Your Google Maps API Key
 const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg"; // Replace with your valid API key
 const { width, height } = Dimensions.get('window');
 
@@ -53,6 +55,7 @@ export default function Maps() {
   // Animation references
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<MapView>(null);
+  const googlePlacesRef = useRef<any>(null); // Updated to any to avoid TypeScript issues
 
   useEffect(() => {
     checkAuthAndInitialize();
@@ -112,8 +115,8 @@ export default function Maps() {
       const newLocation: Region = {
         latitude: lat,
         longitude: lng,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
+        latitudeDelta: 0.005, // Adjusted for closer zoom
+        longitudeDelta: 0.005,
       };
       setPotholeLocation(newLocation);
 
@@ -136,28 +139,34 @@ export default function Maps() {
   };
 
   const fetchCurrentLocation = async (): Promise<Region | null> => {
-    const currentLocation = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.High
-    });
+    try {
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High
+      });
 
-    if (!currentLocation?.coords?.latitude || !currentLocation?.coords?.longitude) {
-      Alert.alert('Error', 'Unable to retrieve current location.');
+      if (!currentLocation?.coords?.latitude || !currentLocation?.coords?.longitude) {
+        Alert.alert('Error', 'Unable to retrieve current location.');
+        return null;
+      }
+
+      const newLocation: Region = {
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+        latitudeDelta: 0.005, // Adjusted for closer zoom
+        longitudeDelta: 0.005,
+      };
+
+      // If there's no pothole location, set address from user's location
+      if (!potholeLocation) {
+        const fetchedAddress = await fetchAddress(newLocation.latitude, newLocation.longitude);
+        setAddress(fetchedAddress);
+      }
+      return newLocation;
+    } catch (error: any) {
+      console.error('Location Fetch Error:', error);
+      Alert.alert('Error', 'Failed to fetch current location.');
       return null;
     }
-
-    const newLocation: Region = {
-      latitude: currentLocation.coords.latitude,
-      longitude: currentLocation.coords.longitude,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421,
-    };
-
-    // If there's no pothole location, set address from user's location
-    if (!potholeLocation) {
-      const fetchedAddress = await fetchAddress(newLocation.latitude, newLocation.longitude);
-      setAddress(fetchedAddress);
-    }
-    return newLocation;
   };
 
   // Fetch address using coordinates via Google Geocoding API
@@ -189,8 +198,7 @@ export default function Maps() {
 
   // When user moves the map, update address if showing pothole location
   const onRegionChangeComplete = async (newRegion: Region) => {
-    // If we are centered on the pothole location, update the address based on that region
-    // If no pothole location, then this region might just be user location. Either way:
+    // Update address based on the new region
     if (newRegion) {
       const fetchedAddress = await fetchAddress(newRegion.latitude, newRegion.longitude);
       setAddress(fetchedAddress);
@@ -211,15 +219,15 @@ export default function Maps() {
 
       // If we have pothole location and params
       if (potholeLocation && params.result) {
-        const parsedResult = typeof params.result === 'string' 
-          ? JSON.parse(params.result) 
+        const parsedResult = typeof params.result === 'string'
+          ? JSON.parse(params.result)
           : params.result;
 
         // Sending Twitter share request
         if (shareOnTwitter) {
           try {
             const imageUrl = parsedResult.report?.imageUrl;
-            
+
             if (!imageUrl) {
               Alert.alert('Error', 'Image URL not found');
               return;
@@ -283,6 +291,25 @@ export default function Maps() {
     }
   };
 
+  // Function to handle the selection of a place from the search box
+  const handlePlaceSelect = (data: any, details: any | null) => {
+    if (details && details.geometry && details.geometry.location) {
+      const { lat, lng } = details.geometry.location;
+      const newRegion: Region = {
+        latitude: lat,
+        longitude: lng,
+        latitudeDelta: 0.005, // Adjust zoom level as needed
+        longitudeDelta: 0.005,
+      };
+      setPotholeLocation(newRegion);
+      setAddress(data.description);
+
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(newRegion, 1000);
+      }
+    }
+  };
+
   // AI Results Sheet Component
   const AiResultsSheet = () => (
     <View style={styles.aiResultsSheet}>
@@ -343,6 +370,26 @@ export default function Maps() {
 
   return (
     <View style={styles.container}>
+      {/* Google Places Autocomplete Search Box */}
+      <GooglePlacesAutocomplete
+        ref={googlePlacesRef}
+        placeholder="Search for a location"
+        fetchDetails={true}
+        onPress={handlePlaceSelect}
+        query={{
+          key: GOOGLE_MAPS_API_KEY,
+          language: 'en',
+          types: 'geocode', // Restrict to geocoding results
+          // components: 'country:us', // Uncomment to restrict to a specific country
+        }}
+        styles={{
+          container: styles.searchContainer,
+          textInput: styles.searchInput,
+          listView: styles.listView,
+        }}
+        debounce={200}
+      />
+
       {(potholeLocation || userLocation) ? (
         <MapView
           ref={mapRef}
@@ -351,8 +398,8 @@ export default function Maps() {
           initialRegion={potholeLocation || userLocation || {
             latitude: 37.7749,
             longitude: -122.4194,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
           }}
           mapType='satellite'
           camera={
@@ -368,27 +415,16 @@ export default function Maps() {
           }
           onRegionChangeComplete={onRegionChangeComplete}
         >
-          {/* Marker for user's current location (red pin) */}
-          {userLocation && (
+          {/* Conditionally render a single marker */}
+          {(potholeLocation || userLocation) && (
             <Marker
               coordinate={{
-                latitude: userLocation.latitude,
-                longitude: userLocation.longitude,
+                latitude: potholeLocation ? potholeLocation.latitude : userLocation!.latitude,
+                longitude: potholeLocation ? potholeLocation.longitude : userLocation!.longitude,
               }}
-              title="You are here"
-              pinColor="red"
-            />
-          )}
-
-          {/* Marker for pothole location (default pin color) */}
-          {potholeLocation && (
-            <Marker
-              coordinate={{
-                latitude: potholeLocation.latitude,
-                longitude: potholeLocation.longitude,
-              }}
-              title="Pothole Location"
+              title={potholeLocation ? "Pothole Location" : "You are here"}
               description={address}
+              pinColor={potholeLocation ? undefined : "red"} // Red for user location, default for pothole
             />
           )}
         </MapView>
@@ -445,6 +481,7 @@ export default function Maps() {
         </View>
       </Modal>
 
+      {/* Twitter Share Option */}
       <View style={styles.twitterContainer}>
         <View style={styles.twitterShareOption}>
           <Checkbox
@@ -459,10 +496,10 @@ export default function Maps() {
               Let your community know about this pothole
             </Text>
           </View>
-          <Ionicons 
-            name="logo-twitter" 
-            size={24} 
-            color="#1DA1F2" 
+          <Ionicons
+            name="logo-twitter"
+            size={24}
+            color="#1DA1F2"
           />
         </View>
       </View>
@@ -474,6 +511,29 @@ export default function Maps() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  // Styles for the search box
+  searchContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    width: '90%',
+    alignSelf: 'center',
+    zIndex: 1, // Ensure the search box is above the map
+  },
+  searchInput: {
+    height: 50,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  listView: {
+    backgroundColor: '#fff',
   },
   map: {
     flex: 1,
@@ -558,7 +618,7 @@ const styles = StyleSheet.create({
   },
   aiResultsSheet: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
+    top: Platform.OS === 'ios' ? 120 : 100, // Adjusted to avoid overlap with search box
     left: 20,
     right: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
