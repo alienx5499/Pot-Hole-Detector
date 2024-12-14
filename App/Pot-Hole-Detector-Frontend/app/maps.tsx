@@ -19,6 +19,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Checkbox from 'expo-checkbox';
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg"; // Replace with your valid API key
 const { width, height } = Dimensions.get('window');
@@ -47,6 +48,7 @@ export default function Maps() {
   const [address, setAddress] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [aiResults, setAiResults] = useState<any[]>([]);
+  const [shareOnTwitter, setShareOnTwitter] = useState(false);
 
   // Animation references
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -196,19 +198,80 @@ export default function Maps() {
   };
 
   // Submitting pothole info and navigate to dashboard
-  const handleSubmit = () => {
-    setModalVisible(true);
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 5,
-      useNativeDriver: true,
-    }).start();
+  const handleSubmit = async () => {
+    try {
+      // Get the token
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No token found');
+        Alert.alert('Error', 'Please login again');
+        router.replace('/auth');
+        return;
+      }
 
-    setTimeout(() => {
-      setModalVisible(false);
-      scaleAnim.setValue(0);
-      router.replace('/(tabs)/dashboard');
-    }, 2000);
+      // If we have pothole location and params
+      if (potholeLocation && params.result) {
+        const parsedResult = typeof params.result === 'string' 
+          ? JSON.parse(params.result) 
+          : params.result;
+
+        // Sending Twitter share request
+        if (shareOnTwitter) {
+          try {
+            const imageUrl = parsedResult.report?.imageUrl;
+            
+            if (!imageUrl) {
+              Alert.alert('Error', 'Image URL not found');
+              return;
+            }
+
+            const twitterResponse = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/share-twitter', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                imageUrl: imageUrl,
+                location: address,
+                confidence: Number(parsedResult.detectionResultPercentage).toFixed(2),
+              }),
+            });
+
+            if (!twitterResponse.ok) {
+              const errorData = await twitterResponse.json();
+              Alert.alert('Error', 'Failed to share on Twitter');
+              return;
+            }
+          } catch (twitterError) {
+            Alert.alert('Error', 'Failed to share on Twitter');
+            return;
+          }
+        }
+
+        // Showing success modal and navigating
+        setModalVisible(true);
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+
+        setTimeout(() => {
+          setModalVisible(false);
+          scaleAnim.setValue(0);
+          router.replace('/(tabs)/dashboard');
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('Submit error:', error);
+      if (error.message?.includes('token')) {
+        Alert.alert('Session Expired', 'Please login again');
+        router.replace('/auth');
+      } else {
+        Alert.alert('Error', 'Failed to submit report');
+      }
+    }
   };
 
   // Center map on user's current location
@@ -381,6 +444,28 @@ export default function Maps() {
           </Animated.View>
         </View>
       </Modal>
+
+      <View style={styles.twitterContainer}>
+        <View style={styles.twitterShareOption}>
+          <Checkbox
+            value={shareOnTwitter}
+            onValueChange={setShareOnTwitter}
+            color={shareOnTwitter ? '#1DA1F2' : undefined}
+            style={styles.checkbox}
+          />
+          <View style={styles.twitterTextContainer}>
+            <Text style={styles.twitterShareTitle}>Share on Twitter</Text>
+            <Text style={styles.twitterShareSubtext}>
+              Let your community know about this pothole
+            </Text>
+          </View>
+          <Ionicons 
+            name="logo-twitter" 
+            size={24} 
+            color="#1DA1F2" 
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -555,5 +640,40 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 10,
     elevation: 5,
+  },
+  twitterContainer: {
+    position: 'absolute',
+    bottom: 180,
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  twitterShareOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    padding: 15,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  checkbox: {
+    marginRight: 12,
+    borderRadius: 4,
+  },
+  twitterTextContainer: {
+    flex: 1,
+  },
+  twitterShareTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  twitterShareSubtext: {
+    fontSize: 13,
+    color: '#666',
   },
 });

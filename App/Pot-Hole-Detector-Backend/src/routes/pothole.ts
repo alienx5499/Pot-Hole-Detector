@@ -5,22 +5,17 @@ import userMiddleware from "../middlewares";
 import multer from "multer";
 import path from "path";
 import mongoose from "mongoose";
+import { rwClient } from '../config/twitter';
+import fs from 'fs';
+import fetch from 'node-fetch';
+import cloudinary from '../config/cloudinary';
+import { Readable } from 'stream';
 
 const potholeRouter = Router();
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../uploads/')) // Use absolute path
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
-  }
-});
-
+// Keeping only the memory storage version
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
   },
@@ -33,69 +28,91 @@ const upload = multer({
   }
 });
 
-// Error handling middleware for multer
+// Updating the uploadMiddleware to use the memory storage version
 const uploadMiddleware = (req: Request, res: Response, next: NextFunction) => {
   upload.single('image')(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      // A Multer error occurred when uploading
       return res.status(400).json({
         success: false,
         message: `Upload error: ${err.message}`
       });
     } else if (err) {
-      // An unknown error occurred
       return res.status(400).json({
         success: false,
         message: `Upload error: ${err.message}`
       });
     }
-    // Everything went fine
     next();
   });
 };
 
-// Updated upload route with proper error handling
+// Helper function to upload to Cloudinary
+const uploadToCloudinary = async (file: Express.Multer.File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'potholes',
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result?.secure_url || '');
+      }
+    );
+
+    // Converting buffer to Stream
+    const stream = Readable.from(file.buffer);
+    stream.pipe(uploadStream);
+  });
+};
+
+// Updating the upload route
 potholeRouter.post('/upload', 
   userMiddleware, 
   uploadMiddleware,
   async (req: CustomRequest, res: Response) => {
     try {
-        if (!req.file) {
-            res.status(400).json({ 
-              success: false, 
-              message: "No image file provided" 
-            });
-            return;
-        }
-
-        const { latitude, longitude, address, detectionResultPercentage } = req.body;
-        if (!latitude || !longitude || !detectionResultPercentage) {
-            res.status(400).json({ 
-              success: false, 
-              message: "Location coordinates and detection result are required" 
-            });
-            return;
-        }
-
-        const report = await ReportModel.create({
-            userId: req.userId,
-            imageUrl: req.file.path,
-            location: {
-                latitude: parseFloat(latitude),
-                longitude: parseFloat(longitude),
-                address: address || ''
-            },
-            detectionResultPercentage: parseFloat(detectionResultPercentage)
+      if (!req.file) {
+        res.status(400).json({ 
+          success: false, 
+          message: "No image file provided" 
         });
+        return;
+      }
 
-        res.json({ success: true, report });
+      // Uploading to Cloudinary
+      const imageUrl = await uploadToCloudinary(req.file);
+
+      const { latitude, longitude, address, detectionResultPercentage } = req.body;
+      if (!latitude || !longitude || !detectionResultPercentage) {
+        res.status(400).json({ 
+          success: false, 
+          message: "Location coordinates and detection result are required" 
+        });
+        return;
+      }
+
+      // Creating report with Cloudinary URL
+      const report = await ReportModel.create({
+        userId: req.userId,
+        imageUrl: imageUrl, // Storing Cloudinary URL
+        location: {
+          latitude: parseFloat(latitude),
+          longitude: parseFloat(longitude),
+          address: address || ''
+        },
+        detectionResultPercentage: parseFloat(detectionResultPercentage)
+      });
+
+      res.json({ success: true, report });
     } catch (error) {
-        res.status(500).json({ 
-            success: false, 
-            message: "Error uploading report"
-        });
+      console.error('Upload error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Error uploading report"
+      });
     }
-});
+  }
+);
 
 // Modify dashboard route to show only user-specific data
 potholeRouter.get('/dashboard', userMiddleware, async (req: CustomRequest, res: Response) => {
@@ -225,5 +242,76 @@ potholeRouter.get('/report/:id', userMiddleware, async (req: CustomRequest, res:
         });
     }
 });
+
+
+potholeRouter.post('/share-twitter',
+  userMiddleware,
+  async (req: CustomRequest, res: Response) => {
+    try {
+      const { imageUrl, location, confidence } = req.body;
+      
+      if (!imageUrl) {
+        throw new Error('Image URL is required');
+      }
+
+      const user = await UserModel.findById(req.userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Creating tweet text
+      const tweetText = `🚨 Pothole Alert! 📍\nReported by: ${user.name}\nLocation: ${location}\nConfidence: ${Number(confidence).toFixed(2)}%\n#PotholeAlert #RoadSafety`;
+
+      try {
+        // Downloading the image from Cloudinary
+        const imageResponse = await fetch(imageUrl);
+        const imageBuffer = await imageResponse.buffer();
+        
+        // Saving temporarily
+        const tempImagePath = path.join(__dirname, '../../uploads/temp-twitter-image.jpg');
+        fs.writeFileSync(tempImagePath, imageBuffer);
+
+        try {
+          // Uploading image to Twitter
+          const mediaId = await rwClient.v1.uploadMedia(tempImagePath);
+
+          // Posting tweet with image
+          await rwClient.v2.tweet({
+            text: tweetText,
+            media: { media_ids: [mediaId] }
+          });
+
+          // Cleaning up temp file
+          fs.unlinkSync(tempImagePath);
+
+          res.json({ 
+            success: true, 
+            message: 'Successfully shared on Twitter' 
+          });
+        } catch (twitterError: any) {
+          // Cleaning up temp file in case of error
+          if (fs.existsSync(tempImagePath)) {
+            fs.unlinkSync(tempImagePath);
+          }
+          throw twitterError;
+        }
+      } catch (error: any) {
+        console.error('Twitter posting error:', error);
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to post to Twitter',
+          error: error.message
+        });
+      }
+    } catch (error: any) {
+      console.error('Share to Twitter error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error sharing to Twitter',
+        error: error.message
+      });
+    }
+  }
+);
 
 export default potholeRouter;

@@ -109,7 +109,7 @@ export default function Dashboard() {
       if (result.success) {
         setDashboardData(result.data);
         setTotalPotholes(result.data.statistics.totalPotholes);
-        
+
         setMonthlyDetections({
           labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
           datasets: [{
@@ -191,8 +191,7 @@ export default function Dashboard() {
       </View>
     </View>
   );
-
-  // Define the Header Component for FlatList
+ 
   const ListHeader = () => (
     <>
       {/* Header */}
@@ -413,7 +412,7 @@ const styles = StyleSheet.create({
   },
   map: {
     width: '100%',
-    height: screenHeight * 0.4, 
+    height: screenHeight * 0.4,
     borderRadius: 16,
     marginTop: 10,
   },

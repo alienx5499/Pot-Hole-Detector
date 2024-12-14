@@ -1,12 +1,14 @@
 // app/(tabs)/_layout.tsx
+
 import { Tabs } from "expo-router";
 import React from "react";
-import { Image, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabsLayout() {
   return (
     <Tabs
-      screenOptions={{
+      screenOptions={({ route }) => ({
         tabBarShowLabel: true,
         tabBarStyle: {
           backgroundColor: "#fff",
@@ -21,21 +23,36 @@ export default function TabsLayout() {
         },
         tabBarActiveTintColor: "#007AFF",
         tabBarInactiveTintColor: "#8e8e93",
-      }}
+        headerShown: false, // Hide header for all tabs
+        tabBarIcon: ({ color, size }) => {
+          let iconName: string = "ellipse"; // Default icon
+
+          switch (route.name) {
+            case "index":
+              iconName = "home";
+              break;
+            case "camera":
+              iconName = "camera";
+              break;
+            case "dashboard":
+              iconName = "stats-chart";
+              break;
+            case "profile":
+              iconName = "person-circle";
+              break;
+            default:
+              iconName = "ellipse";
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
     >
       {/* Home Tab */}
       <Tabs.Screen
         name="index"
         options={{
-          headerShown: false,
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Image
-              source={require("../../assets/images/index.png")}
-              style={[styles.icon, { width: size, height: size }]}
-              resizeMode="contain"
-            />
-          ),
         }}
       />
 
@@ -43,15 +60,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="camera"
         options={{
-          headerShown: false,
           title: "Camera",
-          tabBarIcon: ({ color, size }) => (
-            <Image
-              source={require("../../assets/images/camera.png")}
-              style={[styles.icon, { width: size, height: size }]}
-              resizeMode="contain"
-            />
-          ),
         }}
       />
 
@@ -59,15 +68,15 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          headerShown: false,
           title: "Dashboard",
-          tabBarIcon: ({ color, size }) => (
-            <Image
-              source={require("../../assets/images/dashboard.png")}
-              style={[styles.icon, { width: size, height: size }]}
-              resizeMode="contain"
-            />
-          ),
+        }}
+      />
+
+      {/* Profile Tab */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
         }}
         />
     </Tabs>
@@ -75,7 +84,5 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  icon: {
-    // addl icon styling if ndd
-  },
+  // Add any additional styles if needed
 });

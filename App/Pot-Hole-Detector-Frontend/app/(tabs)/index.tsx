@@ -22,8 +22,21 @@ export default function Index() {
   useFocusEffect(
     React.useCallback(() => {
       const checkGuestStatus = async () => {
-        const isGuestUser = await AsyncStorage.getItem('isGuest');
-        setIsGuest(isGuestUser === 'true');
+        try {
+          const token = await AsyncStorage.getItem('userToken');
+          if (!token) {
+            await AsyncStorage.removeItem('isGuest');
+            router.replace('/auth');
+            return;
+          }
+
+          const isGuestUser = await AsyncStorage.getItem('isGuest');
+          console.log('Guest status:', isGuestUser);
+          setIsGuest(isGuestUser === 'true');
+        } catch (error) {
+          console.error('Error checking guest status:', error);
+          setIsGuest(false);
+        }
       };
       checkGuestStatus();
     }, [])
@@ -43,7 +56,7 @@ export default function Index() {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('userToken');
+      await AsyncStorage.clear();
       router.replace('/auth');
     } catch (error) {
       console.error('Error logging out:', error);
@@ -58,10 +71,24 @@ export default function Index() {
     router.push("/dashboard");
   };
 
-  const handleConversionSuccess = () => {
-    setShowConversionModal(false);
-    setIsGuest(false);
+  const handleConversionSuccess = async () => {
+    try {
+      await AsyncStorage.setItem('isGuest', 'false');
+      setShowConversionModal(false);
+      setIsGuest(false);
+    } catch (error) {
+      console.error('Error updating guest status:', error);
+    }
   };
+
+  useEffect(() => {
+    const debugStorage = async () => {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const allItems = await AsyncStorage.multiGet(allKeys);
+      console.log('All AsyncStorage items:', allItems);
+    };
+    debugStorage();
+  }, []);
 
   return (
     <LinearGradient
@@ -77,7 +104,7 @@ export default function Index() {
         />
 
         <View style={styles.contentCard}>
-          <Text style={styles.title}>Pot-Hole-Detector</Text>
+          <Text style={styles.title}>Welcome</Text>
           <Text style={styles.tagline}>Empowering Safer Roads</Text>
 
           <Text style={styles.description}>
