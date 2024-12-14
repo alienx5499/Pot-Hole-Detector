@@ -1,15 +1,14 @@
 {
   "expo": {
-    "name": "Pot-Hole-Detector",
-    "slug": "Pot-Hole-Detector",
-    "scheme":"com.yourcompany.potholedetector",
+    "name": "SpotHole",
+    "slug": "spothole",
+    "scheme": "com.yourcompany.spothole",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/splash-icon.png",
-      
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,7 +18,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.potholedetector",
+      "bundleIdentifier": "com.yourcompany.spothole",
       "config": {
         "googleMapsApiKey": "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg"
       }
@@ -29,7 +28,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourcompany.potholedetector",
+      "package": "com.yourcompany.spothole",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg"
