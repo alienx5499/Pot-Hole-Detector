@@ -85,7 +85,32 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 ---
 
 ## **📸 Screenshots**
-*Screenshots coming soon!*
+<div align="center">
+
+<table>
+<tr>
+  <td><img src="https://github.com/user-attachments/assets/bdbed1b4-8f6d-4bed-9eb4-ce4f147864b9" alt="Login Screen" width="250px"></td>
+  <td><img src="https://github.com/user-attachments/assets/dc1ef52c-ccd9-4e8f-a7a3-1b37c1d4ea9e" alt="Splash Screen" width="250px"></td>
+  <td><img src="https://github.com/user-attachments/assets/c0f6feec-d484-4acc-ac4e-60fbf6b82e18" alt="Home Screen" width="250px"></td>
+</tr>
+<tr>
+  <td><b>Login Screen</b></td>
+  <td><b>Splash Screen</b></td>
+  <td><b>Home Screen</b></td>
+</tr>
+<tr>
+  <td><img src="https://github.com/user-attachments/assets/69b7212d-ed57-4e2f-8843-47da87991673" alt="Camera Screen" width="250px"></td>
+  <td><img src="https://github.com/user-attachments/assets/7ec49fe0-4e64-4cde-a284-b707ccd8404c" alt="Map Screen" width="250px"></td>
+  <td><img src="https://github.com/user-attachments/assets/07c5766c-b778-4544-9fb0-ad1542c6f038" alt="Dashboard Screen" width="250px"></td>
+</tr>
+<tr>
+  <td><b>Camera Screen</b></td>
+  <td><b>Map Screen</b></td>
+  <td><b>Dashboard Screen</b></td>
+</tr>
+</table>
+
+</div>
 
 ---
 
