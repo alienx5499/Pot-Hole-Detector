@@ -11,41 +11,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the Repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # Step 2: Set up Node.js Environment
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
+      # Step 3: Install Dependencies in Frontend
       - name: Install Dependencies
         run: |
-          cd Pot-Hole-Detector-Frontend
+          cd App/Pot-Hole-Detector-Frontend
           npm install
 
+      # Step 4: Install EAS CLI Globally
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
+      # Step 5: Authenticate with Expo
       - name: Authenticate with Expo
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           eas login --token $EXPO_TOKEN
 
+      # Step 6: Trigger EAS Build for Android
       - name: Trigger EAS Build
         id: trigger_build
         run: |
-          cd front
-          BUILD_OUTPUT=$(eas build --platform android --profile production --non-interactive)
+          cd App/Pot-Hole-Detector-Frontend
+          BUILD_OUTPUT=$(eas build --platform android --profile production --non-interactive --json)
           echo "$BUILD_OUTPUT"
-          # Extract Build ID from EAS CLI output
+          # Extract Build ID from EAS CLI output using jq
           BUILD_ID=$(echo "$BUILD_OUTPUT" | jq -r '.[0].id')
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
 
+      # Step 7: Wait for Build Completion
       - name: Wait for Build Completion
         run: |
-          cd front
+          cd App/Pot-Hole-Detector-Frontend
           echo "Waiting for build to complete..."
           while true; do
             STATUS=$(eas build:inspect --platform android --id $BUILD_ID --json | jq -r '.[0].status')
@@ -62,16 +69,19 @@ jobs:
             fi
           done
 
+      # Step 8: Fetch Build Artifacts (APK URL)
       - name: Fetch Build Artifacts
         run: |
-          cd front
+          cd App/Pot-Hole-Detector-Frontend
           BUILD_URL=$(eas build:inspect --platform android --id $BUILD_ID --json | jq -r '.[0].artifacts.android.apk.url')
           echo "BUILD_URL=$BUILD_URL" >> $GITHUB_ENV
 
+      # Step 9: Download the APK
       - name: Download APK
         run: |
           wget $BUILD_URL -O PotHole-${GITHUB_REF_NAME}.apk
 
+      # Step 10: Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -85,6 +95,7 @@ jobs:
           draft: false
           prerelease: false
 
+      # Step 11: Upload APK to GitHub Release
       - name: Upload APK to Release
         uses: actions/upload-release-asset@v1
         env:
