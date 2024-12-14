@@ -2,15 +2,18 @@
   "expo": {
     "name": "Pot-Hole-Detector",
     "slug": "Pot-Hole-Detector",
+    "scheme":"com.yourcompany.potholedetector",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/splash-icon.png",
+      
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],

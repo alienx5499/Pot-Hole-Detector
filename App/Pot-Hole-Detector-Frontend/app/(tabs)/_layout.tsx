@@ -78,7 +78,7 @@ export default function TabsLayout() {
         options={{
           title: "Profile",
         }}
-      />
+        />
     </Tabs>
   );
 }

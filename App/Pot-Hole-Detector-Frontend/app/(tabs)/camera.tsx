@@ -96,7 +96,7 @@ export default function Camera() {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes:'images',
         allowsEditing: true,
         quality: 1,
         aspect: [4, 3],
