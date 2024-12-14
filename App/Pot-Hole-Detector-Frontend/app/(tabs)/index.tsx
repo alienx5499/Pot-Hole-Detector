@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState  } from "react";
 import { Text, View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useNavigation } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import GuestConversionModal from '../components/GuestConversionModal';
 import { useFocusEffect } from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
+
 
 export default function Index() {
   const navigation = useNavigation();

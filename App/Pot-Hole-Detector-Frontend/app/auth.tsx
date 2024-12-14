@@ -16,7 +16,6 @@ import {
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-
 const { width, height } = Dimensions.get('window');
 
 export default function Auth() {
@@ -161,7 +160,7 @@ export default function Auth() {
     <View style={{ flex: 1, backgroundColor: '#1f1c2c' }}>
       <Animated.View style={StyleSheet.absoluteFillObject}>
         <LinearGradient
-          colors={[bgColor1.__getValue(), bgColor2.__getValue()]}
+          colors={[bgColor1.toString(), bgColor2.toString()]}
           style={StyleSheet.absoluteFill}
           start={{ x: 0.2, y: 0.2 }}
           end={{ x: 0.8, y: 0.8 }}

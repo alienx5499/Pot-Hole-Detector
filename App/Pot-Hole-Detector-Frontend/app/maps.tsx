@@ -155,7 +155,6 @@ export default function Maps() {
       const fetchedAddress = await fetchAddress(newLocation.latitude, newLocation.longitude);
       setAddress(fetchedAddress);
     }
-
     return newLocation;
   };
 
@@ -292,6 +291,18 @@ export default function Maps() {
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421,
           }}
+          mapType='satellite'
+          camera={
+            {
+              center: {
+                latitude: potholeLocation ? potholeLocation.latitude : userLocation ? userLocation.latitude : 37.7749,
+                longitude: potholeLocation ? potholeLocation.longitude : userLocation ? userLocation.longitude : -122.4194,
+              },
+              zoom: 20,
+              heading: 10,
+              pitch: 10
+            }
+          }
           onRegionChangeComplete={onRegionChangeComplete}
         >
           {/* Marker for user's current location (red pin) */}
