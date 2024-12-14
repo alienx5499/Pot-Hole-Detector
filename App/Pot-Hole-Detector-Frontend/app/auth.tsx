@@ -161,7 +161,8 @@ export default function Auth() {
   const handleGuestSignIn = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://pot-hole-detector.onrender.com/api/v1/auth/guest-signin', {
+      // const response = await fetch('https://pot-hole-detector.onrender.com/api/v1/auth/guest-signin', {
+      const response = await fetch('http://10.51.11.170:3000/api/v1/auth/guest-signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

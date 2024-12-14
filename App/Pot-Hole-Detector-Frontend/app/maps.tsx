@@ -204,6 +204,8 @@ export default function Maps() {
       // Get the token
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
+        console.error('No token found');
+        Alert.alert('Error', 'Please login again');
         router.replace('/auth');
         return;
       }
@@ -214,45 +216,62 @@ export default function Maps() {
           ? JSON.parse(params.result) 
           : params.result;
 
-        // Send Twitter share request
+        // Sending Twitter share request
         if (shareOnTwitter) {
-          const twitterResponse = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/share-twitter', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              // The image URL is directly in the report object from the upload response
-              imageUrl: `http://10.51.11.170:3000/${parsedResult.imageUrl || parsedResult.report?.imageUrl}`,
-              location: address,
-              confidence: Number(parsedResult.detectionResultPercentage).toFixed(2),
-            }),
-          });
+          try {
+            const imageUrl = parsedResult.report?.imageUrl;
+            
+            if (!imageUrl) {
+              Alert.alert('Error', 'Image URL not found');
+              return;
+            }
 
-          if (!twitterResponse.ok) {
-            const errorData = await twitterResponse.json();
-            console.error('Failed to share on Twitter:', errorData);
+            const twitterResponse = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/share-twitter', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                imageUrl: imageUrl,
+                location: address,
+                confidence: Number(parsedResult.detectionResultPercentage).toFixed(2),
+              }),
+            });
+
+            if (!twitterResponse.ok) {
+              const errorData = await twitterResponse.json();
+              Alert.alert('Error', 'Failed to share on Twitter');
+              return;
+            }
+          } catch (twitterError) {
             Alert.alert('Error', 'Failed to share on Twitter');
+            return;
           }
         }
+
+        // Showing success modal and navigating
+        setModalVisible(true);
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+
+        setTimeout(() => {
+          setModalVisible(false);
+          scaleAnim.setValue(0);
+          router.replace('/(tabs)/dashboard');
+        }, 2000);
       }
-
-      setModalVisible(true);
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 5,
-        useNativeDriver: true,
-      }).start();
-
-      setTimeout(() => {
-        setModalVisible(false);
-        scaleAnim.setValue(0);
-        router.replace('/(tabs)/dashboard');
-      }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error);
-      Alert.alert('Error', 'Failed to submit report');
+      if (error.message?.includes('token')) {
+        Alert.alert('Session Expired', 'Please login again');
+        router.replace('/auth');
+      } else {
+        Alert.alert('Error', 'Failed to submit report');
+      }
     }
   };
 

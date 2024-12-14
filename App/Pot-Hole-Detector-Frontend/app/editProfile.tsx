@@ -39,8 +39,7 @@ const EditProfile = () => {
           return;
         }
 
-        // const response = await axios.get('https://pot-hole-detector.onrender.com/api/v1/auth/profile', {
-        const response = await axios.get('http://10.51.11.170:3000/api/v1/auth/profile', {
+        const response = await axios.get('https://pot-hole-detector.onrender.com/api/v1/auth/profile', {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -91,7 +90,8 @@ const EditProfile = () => {
       }
 
       const response = await axios.put(
-        'https://pot-hole-detector.onrender.com/api/v1/auth/profile',
+        // 'https://pot-hole-detector.onrender.com/api/v1/auth/profile',
+        'http://10.51.11.170:3000/api/v1/auth/profile',
         {
           name,
           email,
