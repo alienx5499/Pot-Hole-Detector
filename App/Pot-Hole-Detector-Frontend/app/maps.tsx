@@ -223,7 +223,36 @@ export default function Maps() {
           ? JSON.parse(params.result)
           : params.result;
 
-        // Sending Twitter share request
+        // Creating FormData with the current map location instead of the original location
+        const formData = new FormData();
+        const imageFile = {
+          uri: parsedResult.report?.imageUrl,
+          type: 'image/jpeg',
+          name: 'photo.jpg'
+        };
+        
+        formData.append('image', imageFile as any);
+        formData.append('latitude', potholeLocation.latitude.toString());
+        formData.append('longitude', potholeLocation.longitude.toString());
+        formData.append('address', address);
+        formData.append('detectionResultPercentage', parsedResult.detectionResultPercentage.toString());
+
+        // Updating the report with new location
+        const response = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to update location');
+        }
+
+        // Sending Twitter share request if enabled
         if (shareOnTwitter) {
           try {
             const imageUrl = parsedResult.report?.imageUrl;
