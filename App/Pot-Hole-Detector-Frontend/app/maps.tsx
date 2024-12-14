@@ -51,6 +51,7 @@ export default function Maps() {
   const [modalVisible, setModalVisible] = useState(false);
   const [aiResults, setAiResults] = useState<any[]>([]);
   const [shareOnTwitter, setShareOnTwitter] = useState(false);
+  const [submitting, setSubmitting] = useState(true);
 
   // Animation references
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -209,6 +210,9 @@ export default function Maps() {
   const handleSubmit = async () => {
     try {
       // Get the token
+      setSubmitting(false);
+      console.log(submitting);
+      
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
         console.error('No token found');
@@ -477,8 +481,9 @@ export default function Maps() {
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSubmit}
-          disabled={!address || address.includes('not found') || address.includes('Could not')}
+          disabled={((!address || address.includes('not found') || address.includes('Could not'))) || !submitting }
         >
+        {console.log(submitting)}
           <Text style={styles.submitButtonText}>Submit</Text>
           <MaterialIcons name="navigate-next" size={24} color="#fff" />
         </TouchableOpacity>

@@ -31,7 +31,7 @@ export default function Index() {
           }
 
           const isGuestUser = await AsyncStorage.getItem('isGuest');
-          console.log('Guest status:', isGuestUser);
+
           setIsGuest(isGuestUser === 'true');
         } catch (error) {
           console.error('Error checking guest status:', error);
@@ -85,7 +85,6 @@ export default function Index() {
     const debugStorage = async () => {
       const allKeys = await AsyncStorage.getAllKeys();
       const allItems = await AsyncStorage.multiGet(allKeys);
-      console.log('All AsyncStorage items:', allItems);
     };
     debugStorage();
   }, []);
