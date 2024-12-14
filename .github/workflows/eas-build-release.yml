@@ -36,7 +36,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas login --token $EXPO_TOKEN
+          echo "EXPO_TOKEN=$EXPO_TOKEN" >> $GITHUB_ENV
 
       # Step 6: Trigger EAS Build for Android
       - name: Trigger EAS Build
