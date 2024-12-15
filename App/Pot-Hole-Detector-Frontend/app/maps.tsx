@@ -52,6 +52,7 @@ export default function Maps() {
   const [aiResults, setAiResults] = useState<any[]>([]);
   const [shareOnTwitter, setShareOnTwitter] = useState(false);
   const [submitting, setSubmitting] = useState(true);
+  const [processing, setProcessing] = useState(false);
 
   // Animation references
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -209,88 +210,71 @@ export default function Maps() {
   // Submitting pothole info and navigate to dashboard
   const handleSubmit = async () => {
     try {
-      // Get the token
-      setSubmitting(false);
-      console.log(submitting);
-      
+      setProcessing(true);    // Start processing animation
+      setSubmitting(false);   // Disable submit button
+
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
-        console.error('No token found');
         Alert.alert('Error', 'Please login again');
         router.replace('/auth');
         return;
       }
 
-      // If we have pothole location and params
       if (potholeLocation && params.result) {
         const parsedResult = typeof params.result === 'string'
           ? JSON.parse(params.result)
           : params.result;
 
-        // Creating FormData with the current map location instead of the original location
         const formData = new FormData();
         const imageFile = {
           uri: parsedResult.report?.imageUrl,
           type: 'image/jpeg',
-          name: 'photo.jpg'
+          name: 'photo.jpg',
         };
-        
+
         formData.append('image', imageFile as any);
         formData.append('latitude', potholeLocation.latitude.toString());
         formData.append('longitude', potholeLocation.longitude.toString());
         formData.append('address', address);
         formData.append('detectionResultPercentage', parsedResult.detectionResultPercentage.toString());
 
-        // Updating the report with new location
-        const response = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: formData,
-        });
+        const response = await fetch(
+          'https://pot-hole-detector.onrender.com/api/v1/pothole/upload',
+          {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+          }
+        );
 
         const data = await response.json();
-
         if (!data.success) {
           throw new Error(data.message || 'Failed to update location');
         }
 
-        // Sending Twitter share request if enabled
         if (shareOnTwitter) {
-          try {
-            const imageUrl = parsedResult.report?.imageUrl;
-
-            if (!imageUrl) {
-              Alert.alert('Error', 'Image URL not found');
-              return;
-            }
-
-            const twitterResponse = await fetch('https://pot-hole-detector.onrender.com/api/v1/pothole/share-twitter', {
+          const twitterResponse = await fetch(
+            'https://pot-hole-detector.onrender.com/api/v1/pothole/share-twitter',
+            {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
               },
               body: JSON.stringify({
-                imageUrl: imageUrl,
+                imageUrl: parsedResult.report?.imageUrl,
                 location: address,
                 confidence: Number(parsedResult.detectionResultPercentage).toFixed(2),
               }),
-            });
-
-            if (!twitterResponse.ok) {
-              const errorData = await twitterResponse.json();
-              Alert.alert('Error', 'Failed to share on Twitter');
-              return;
             }
-          } catch (twitterError) {
+          );
+
+          if (!twitterResponse.ok) {
             Alert.alert('Error', 'Failed to share on Twitter');
             return;
           }
         }
 
-        // Showing success modal and navigating
         setModalVisible(true);
         Animated.spring(scaleAnim, {
           toValue: 1,
@@ -305,13 +289,9 @@ export default function Maps() {
         }, 2000);
       }
     } catch (error: any) {
-      console.error('Submit error:', error);
-      if (error.message?.includes('token')) {
-        Alert.alert('Session Expired', 'Please login again');
-        router.replace('/auth');
-      } else {
-        Alert.alert('Error', 'Failed to submit report');
-      }
+      Alert.alert('Error', error.message || 'Failed to submit report');
+    } finally {
+      setProcessing(false); // Stop animation on completion or failure
     }
   };
 
@@ -481,11 +461,21 @@ export default function Maps() {
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSubmit}
-          disabled={((!address || address.includes('not found') || address.includes('Could not'))) || !submitting }
+          disabled={processing || !submitting || !address || address.includes('not found')}
         >
-        {console.log(submitting)}
-          <Text style={styles.submitButtonText}>Submit</Text>
-          <MaterialIcons name="navigate-next" size={24} color="#fff" />
+          {processing ? (
+            <LottieView
+              source={require('../assets/animations/processing.json')}
+              autoPlay
+              loop
+              style={styles.process}
+            />
+          ) : (
+            <>
+              <Text style={styles.submitButtonText}>Submit</Text>
+              <MaterialIcons name="navigate-next" size={24} color="#fff" />
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -583,8 +573,12 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   loader: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
+  },
+  process: {
+      width: 125,
+      height: 125,
   },
   bottomSheet: {
     position: 'absolute',

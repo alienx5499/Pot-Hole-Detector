@@ -20,7 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system';
 import axios from 'axios';
 import LottieView from 'lottie-react-native';
-import processingAnimation from '../../assets/animations/processing.json';
+import processingAnimation from '../../assets/animations/imageDetect.json';
 import camLoaderAnimation from '../../assets/animations/cameraLoader.json';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -345,7 +345,6 @@ export default function Camera() {
             loop
             style={styles.processingLottie}
           />
-          {/* Removed the "Processing..." text as per your request */}
         </View>
       )}
     </View>
@@ -363,8 +362,8 @@ const styles = StyleSheet.create({
     height: 200,
   },
   processingLottie: {
-    width: 600, // Restored to original size
-    height: 600, // Restored to original size
+    width: 300, // Restored to original size
+    height: 300, // Restored to original size
   },
   container: {
     flex: 1,
