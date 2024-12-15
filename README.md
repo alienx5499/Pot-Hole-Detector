@@ -277,7 +277,7 @@ We ❤️ open source! Contributions are welcome to make this project even bette
 	<h3>Thank you for contributing to our repository</h3><br>
 	<p align="center">
 		<a href="https://github.com/alienx5499/Pot-Hole-Detector/contributors">
-			<img src="https://contrib.rocks/image?repo=alienx5499/Pot-Hole-Detector" width="90" height="45" />
+			<img src="https://contrib.rocks/image?repo=alienx5499/Pot-Hole-DetectoR" width="180" height="95" />
 		</a>
 	</p>
 </div>
