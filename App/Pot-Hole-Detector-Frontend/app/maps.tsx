@@ -506,27 +506,29 @@ export default function Maps() {
       </Modal>
 
       {/* Twitter Share Option */}
-      <View style={styles.twitterContainer}>
-        <View style={styles.twitterShareOption}>
-          <Checkbox
-            value={shareOnTwitter}
-            onValueChange={setShareOnTwitter}
-            color={shareOnTwitter ? '#1DA1F2' : undefined}
-            style={styles.checkbox}
-          />
-          <View style={styles.twitterTextContainer}>
-            <Text style={styles.twitterShareTitle}>Share on Twitter</Text>
-            <Text style={styles.twitterShareSubtext}>
-              Let your community know about this pothole
-            </Text>
+      {!processing && !modalVisible && (
+        <View style={styles.twitterContainer}>
+          <View style={styles.twitterShareOption}>
+            <Checkbox
+              value={shareOnTwitter}
+              onValueChange={setShareOnTwitter}
+              color={shareOnTwitter ? '#1DA1F2' : undefined}
+              style={styles.checkbox}
+            />
+            <View style={styles.twitterTextContainer}>
+              <Text style={styles.twitterShareTitle}>Share on Twitter</Text>
+              <Text style={styles.twitterShareSubtext}>
+                Let your community know about this pothole
+              </Text>
+            </View>
+            <Ionicons
+              name="logo-twitter"
+              size={24}
+              color="#1DA1F2"
+            />
           </View>
-          <Ionicons
-            name="logo-twitter"
-            size={24}
-            color="#1DA1F2"
-          />
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -763,5 +765,11 @@ const styles = StyleSheet.create({
   twitterShareSubtext: {
     fontSize: 13,
     color: '#666',
+  },
+  disabledTwitterOption: {
+    opacity: 0.6,
+  },
+  disabledText: {
+    color: '#999',
   },
 });
