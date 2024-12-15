@@ -52,27 +52,24 @@ jobs:
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV  # Save the build ID for later steps
 
       # Step 7: Wait for Build Completion
+      # Wait for Build Completion
       - name: Wait for Build Completion
         run: |
-          cd App/Pot-Hole-Detector-Frontend  # Navigate to the frontend directory
-          echo "Waiting for build to complete..."  # Start waiting loop
+          cd App/Pot-Hole-Detector-Frontend
+          echo "Waiting for build to complete..."
           while true; do
-            # Safely parse JSON response and avoid parse errors
-            BUILD_OUTPUT=$(eas build:inspect --platform android --id $BUILD_ID --json || echo "{}")
+            BUILD_OUTPUT=$(eas build:inspect --platform android --id $BUILD_ID --json || echo '{}')
+            echo "Build Output: $BUILD_OUTPUT"  # Print output for debugging
             BUILD_STATUS=$(echo "$BUILD_OUTPUT" | jq -r '.status // "unknown"')
-
-            echo "Build Status: $BUILD_STATUS"  # Print current build status
-
+            echo "Build Status: $BUILD_STATUS"
             if [[ "$BUILD_STATUS" == "finished" ]]; then
-              echo "Build completed successfully."  # Exit if the build finishes successfully
+              echo "Build completed successfully."
               break
             elif [[ "$BUILD_STATUS" == "errored" ]]; then
-              echo "Build failed."  # Exit with an error if the build fails
+              echo "Build failed."
               exit 1
-            elif [[ "$BUILD_STATUS" == "unknown" ]]; then
-              echo "Invalid response from EAS CLI. Retrying..."  # Handle unexpected output
             else
-              echo "Build in progress. Waiting for 60 seconds..."  # Continue waiting
+              echo "Build in progress. Waiting for 60 seconds..."
               sleep 60
             fi
           done
