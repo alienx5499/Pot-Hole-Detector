@@ -48,7 +48,7 @@ jobs:
           # Trigger a build and extract the build ID
           BUILD_OUTPUT=$(eas build --platform android --profile production --non-interactive --json)
           echo "$BUILD_OUTPUT"  # Print the build output for debugging
-          BUILD_ID=$(echo "$BUILD_OUTPUT" | jq -r '.id')  # Extract the build ID from JSON response
+          BUILD_ID=$(echo "$BUILD_OUTPUT" | jq -r '.[0].id')  # Extracts the first build's ID
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV  # Save the build ID for later steps
 
       # Step 7: Wait for Build Completion
