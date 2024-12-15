@@ -5,7 +5,9 @@ name: EAS Build and Release APK
 on:
   push:
     tags:
-      - 'v*.*.*'  # Trigger when tags like v1.0.0 are pushed
+      - 'v*.*.*'  # Trigger on version tags like v1.0.0
+  release:
+    types: [published]  # Trigger when a release is published
   workflow_dispatch:  # Allow manual trigger from GitHub Actions
 
 # Define jobs
