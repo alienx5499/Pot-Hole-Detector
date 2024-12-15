@@ -11,12 +11,12 @@
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-brightgreen?style=flat-square)
 ![Twitter Integration](https://img.shields.io/badge/social%20media-Twitter-blue?style=flat-square)
 ![Views](https://hits.dwyl.com/alienx5499/Pot-Hole-Detector.svg)
-![⭐ GitHub stars](https://img.shields.io/github/stars/alienx5499/Pot-Hole-Detector?style=social)
-![🍴 GitHub forks](https://img.shields.io/github/forks/alienx5499/Pot-Hole-Detector?style=social)
-![Commits](https://badgen.net/github/commits/alienx5499/Pot-Hole-Detector)
-![🐛 GitHub issues](https://img.shields.io/github/issues/alienx5499/Pot-Hole-Detector)
-![📂 GitHub pull requests](https://img.shields.io/github/issues-pr/alienx5499/Pot-Hole-Detector)
-![💾 GitHub code size](https://img.shields.io/github/languages/code-size/alienx5499/Pot-Hole-Detector)
+![⭐ GitHub stars](https://img.shields.io/github/stars/alienx5499/Pot-Hole-DetectoR?style=social)
+![🍴 GitHub forks](https://img.shields.io/github/forks/alienx5499/Pot-Hole-DetectoR?style=social)
+![Commits](https://badgen.net/github/commits/alienx5499/Pot-Hole-DetectoR)
+![🐛 GitHub issues](https://img.shields.io/github/issues/alienx5499/Pot-Hole-DetectoR)
+![📂 GitHub pull requests](https://img.shields.io/github/issues-pr/alienx5499/Pot-Hole-DetectoR)
+![💾 GitHub code size](https://img.shields.io/github/languages/code-size/alienx5499/Pot-Hole-DetectoR)
 
 </div>
 
