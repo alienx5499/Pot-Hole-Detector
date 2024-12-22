@@ -35,10 +35,10 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ## **📚 Table of Contents**
 1. [✨ Features](#-features)
-2. [🛠️ Tech Stack](#-tech-stack)
+2. [🦾 Tech Stack](#-tech-stack)
 3. [📸 Screenshots](#-screenshots)
 4. [🧩 Try the App](#-try-the-app)
-5. [⚙️ Setup Instructions](#-setup-instructions)
+5. [👨‍🔧 Setup Instructions](#-setup-instructions)
 6. [🕸️ API Endpoints](#-api-endpoints)
 7. [🚨 Resource Warning](#-resource-warning)
 8. [🎯 Target Audience](#-target-audience)
@@ -73,7 +73,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ---
 
-## **🛠️ Tech Stack**
+## **🦾 Tech Stack**
 
 ### 🌐 **Backend Technologies**
 - **Backend Framework**: Node.js with Express.js
@@ -132,7 +132,7 @@ Head over to the [**Releases**](https://github.com/alienx5499/Pot-Hole-Detector/
 
 ---
 
-## **⚙️ Setup Instructions**
+## **👨‍🔧 Setup Instructions**
 
 ### **Frontend Setup**
 - **Prerequisites**
