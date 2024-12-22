@@ -39,7 +39,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 3. [📸 Screenshots](#-screenshots)
 4. [🧩 Try the App](#-try-the-app)
 5. [👨‍🔧 Setup Instructions](#-setup-instructions)
-6. [🕸️ API Endpoints](#-api-endpoints)
+6. [📍 API Endpoints](#-api-endpoints)
 7. [🚨 Resource Warning](#-resource-warning)
 8. [🎯 Target Audience](#-target-audience)
 9. [🤝 Contributing](#-contributing)
@@ -104,7 +104,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 <tr>
   <td><img src="https://github.com/user-attachments/assets/69b7212d-ed57-4e2f-8843-47da87991673" alt="Camera Screen" width="250px"></td>
   <td><img src="https://github.com/user-attachments/assets/7ec49fe0-4e64-4cde-a284-b707ccd8404c" alt="Map Screen" width="250px"></td>
-  <td><img src="https://github.com/user-attachments/assets/07c5766c-b778-4544-9fb0-ad1542c6f038" alt="Dashboard Screen" width="250px"></td>
+  <td><img src="https://github.com/user-attachments/assets/dbbbe796-a30a-411a-9402-ac016b634873" alt="Dashboard Screen" width="250px"></td>
 </tr>
 <tr>
   <td><b>Camera Screen</b></td>
@@ -237,7 +237,7 @@ Head over to the [**Releases**](https://github.com/alienx5499/Pot-Hole-Detector/
 
 ---
 
-## **🕸️ API Endpoints**
+## **📍 API Endpoints**
 
 1. **Authentication**  
    - Register new user `POST /api/v1/auth/signup`
