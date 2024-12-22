@@ -35,14 +35,17 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ## **📚 Table of Contents**
 1. [✨ Features](#-features)
-2. [🛠️ Tech Stack](#️-tech-stack)
+2. [🛠️ Tech Stack](#-tech-stack)
 3. [📸 Screenshots](#-screenshots)
-4. [⚙️ Setup Instructions](#️-setup-instructions)
-5. [🚨 Resource Warning](#-resource-warning)
-6. [🎯 Target Audience](#-target-audience)
-7. [🤝 Contributing](#-contributing)
-8. [🌟 Awesome Contributors](#-awesome-contributors)
-9. [📜 License](#-license)
+4. [🧩 Try the App](#-try-the-app)
+5. [⚙️ Setup Instructions](#-setup-instructions)
+6. [🕸️ API Endpoints](#-api-endpoints)
+7. [🚨 Resource Warning](#-resource-warning)
+8. [🎯 Target Audience](#-target-audience)
+9. [🤝 Contributing](#-contributing)
+10. [🌟 Awesome Contributors](#-awesome-contributors)
+11. [📜 License](#-license)
+12. [📬 Feedback & Suggestions](#-feedback--suggestions)
 
 ---
 
@@ -109,6 +112,21 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
   <td><b>Dashboard Screen</b></td>
 </tr>
 </table>
+
+</div>
+
+---
+
+## **🧩 Try the App**
+
+<div align="center">
+
+### **Want to Try the App?**
+
+Head over to the [**Releases**](https://github.com/alienx5499/Pot-Hole-Detector/releases) tab on our GitHub repository to download and install the APK for Android devices. Experience firsthand how the **Pot Hole Detector** empowers you to report potholes effortlessly!  
+**Or click the download button below:**
+
+[![Download APK](https://img.shields.io/badge/Download-APK-blue?style=flat-square&logo=android)](https://github.com/alienx5499/Pot-Hole-Detector/releases/download/v1.0.0/SpotHole.apk)
 
 </div>
 
