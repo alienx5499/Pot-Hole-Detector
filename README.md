@@ -7,16 +7,16 @@
 ![Build Passing](https://img.shields.io/badge/build-passing-success?style=flat-square)
 ![Node.js](https://img.shields.io/badge/Node.js-v16.10.0-green?style=flat-square)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/alienx5499/Pot-Hole-Detector/blob/main/CONTRIBUTING.md)
-[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/Pot-Hole-Detector?logo=law&logoColor=white)](https://github.com/alienx5499/Pot-Hole-Detector/blob/main/LICENSE)
+[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/POt-Hole-Detector?logo=law&logoColor=white)](https://github.com/alienx5499/POt-Hole-Detector/blob/main/LICENSE)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-brightgreen?style=flat-square)
 ![Twitter Integration](https://img.shields.io/badge/social%20media-Twitter-blue?style=flat-square)
 ![Views](https://hits.dwyl.com/alienx5499/Pot-Hole-Detector.svg)
-![⭐ GitHub stars](https://img.shields.io/github/stars/alienx5499/Pot-Hole-DetectoR?style=social)
-![🍴 GitHub forks](https://img.shields.io/github/forks/alienx5499/Pot-Hole-DetectoR?style=social)
-![Commits](https://badgen.net/github/commits/alienx5499/Pot-Hole-DetectoR)
-![🐛 GitHub issues](https://img.shields.io/github/issues/alienx5499/Pot-Hole-DetectoR)
-![📂 GitHub pull requests](https://img.shields.io/github/issues-pr/alienx5499/Pot-Hole-DetectoR)
-![💾 GitHub code size](https://img.shields.io/github/languages/code-size/alienx5499/Pot-Hole-DetectoR)
+![⭐ GitHub stars](https://img.shields.io/github/stars/alienx5499/POt-Hole-DetectoR?style=social)
+![🍴 GitHub forks](https://img.shields.io/github/forks/alienx5499/POt-Hole-DetectoR?style=social)
+![Commits](https://badgen.net/github/commits/alienx5499/POt-Hole-DetectoR)
+![🐛 GitHub issues](https://img.shields.io/github/issues/alienx5499/POt-Hole-DetectoR)
+![📂 GitHub pull requests](https://img.shields.io/github/issues-pr/alienx5499/POt-Hole-DetectoR)
+![💾 GitHub code size](https://img.shields.io/github/languages/code-size/alienx5499/POt-Hole-DetectoR)
 
 </div>
 
@@ -295,7 +295,7 @@ We ❤️ open source! Contributions are welcome to make this project even bette
 	<h3>Thank you for contributing to our repository</h3><br>
 	<p align="center">
 		<a href="https://github.com/alienx5499/Pot-Hole-Detector/contributors">
-			<img src="https://contrib.rocks/image?repo=alienx5499/Pot-Hole-DetectoR" width="180" height="95" />
+			<img src="https://contrib.rocks/image?repo=alienx5499/POt-Hole-DetectoR" width="180" height="95" />
 		</a>
 	</p>
 </div>
