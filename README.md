@@ -83,7 +83,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 - **Social Media Integration**: Twitter API for posting
 
 ### **Frontend Framework**
-- React.js or any preferred frontend framework for building the dashboard and user interface.
+- React Native with expo 
 
 ---
 
