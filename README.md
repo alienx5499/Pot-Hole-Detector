@@ -7,16 +7,16 @@
 ![Build Passing](https://img.shields.io/badge/build-passing-success?style=flat-square)
 ![Node.js](https://img.shields.io/badge/Node.js-v16.10.0-green?style=flat-square)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/alienx5499/Pot-Hole-Detector/blob/main/CONTRIBUTING.md)
-[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/Pot-Hole-Detector?logo=law&logoColor=white)](https://github.com/alienx5499/Pot-Hole-Detector/blob/main/LICENSE)
+[![License: MIT](https://custom-icon-badges.herokuapp.com/github/license/alienx5499/POt-Hole-Detector?logo=law&logoColor=white)](https://github.com/alienx5499/POt-Hole-Detector/blob/main/LICENSE)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-brightgreen?style=flat-square)
 ![Twitter Integration](https://img.shields.io/badge/social%20media-Twitter-blue?style=flat-square)
 ![Views](https://hits.dwyl.com/alienx5499/Pot-Hole-Detector.svg)
-![⭐ GitHub stars](https://img.shields.io/github/stars/alienx5499/Pot-Hole-Detector?style=social)
-![🍴 GitHub forks](https://img.shields.io/github/forks/alienx5499/Pot-Hole-Detector?style=social)
-![Commits](https://badgen.net/github/commits/alienx5499/Pot-Hole-Detector)
-![🐛 GitHub issues](https://img.shields.io/github/issues/alienx5499/Pot-Hole-Detector)
-![📂 GitHub pull requests](https://img.shields.io/github/issues-pr/alienx5499/Pot-Hole-Detector)
-![💾 GitHub code size](https://img.shields.io/github/languages/code-size/alienx5499/Pot-Hole-Detector)
+![⭐ GitHub stars](https://img.shields.io/github/stars/alienx5499/POt-Hole-DetectoR?style=social)
+![🍴 GitHub forks](https://img.shields.io/github/forks/alienx5499/POt-Hole-DetectoR?style=social)
+![Commits](https://badgen.net/github/commits/alienx5499/POt-Hole-DetectoR)
+![🐛 GitHub issues](https://img.shields.io/github/issues/alienx5499/POt-Hole-DetectoR)
+![📂 GitHub pull requests](https://img.shields.io/github/issues-pr/alienx5499/POt-Hole-DetectoR)
+![💾 GitHub code size](https://img.shields.io/github/languages/code-size/alienx5499/POt-Hole-DetectoR)
 
 </div>
 
@@ -35,14 +35,17 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ## **📚 Table of Contents**
 1. [✨ Features](#-features)
-2. [🛠️ Tech Stack](#️-tech-stack)
+2. [🦾 Tech Stack](#-tech-stack)
 3. [📸 Screenshots](#-screenshots)
-4. [⚙️ Setup Instructions](#️-setup-instructions)
-5. [🚨 Resource Warning](#-resource-warning)
-6. [🎯 Target Audience](#-target-audience)
-7. [🤝 Contributing](#-contributing)
-8. [🌟 Awesome Contributors](#-awesome-contributors)
-9. [📜 License](#-license)
+4. [🧩 Try the App](#-try-the-app)
+5. [👨‍🔧 Setup Instructions](#-setup-instructions)
+6. [📍 API Endpoints](#-api-endpoints)
+7. [🚨 Resource Warning](#-resource-warning)
+8. [🎯 Target Audience](#-target-audience)
+9. [🤝 Contributing](#-contributing)
+10. [🌟 Awesome Contributors](#-awesome-contributors)
+11. [📜 License](#-license)
+12. [📬 Feedback & Suggestions](#-feedback--suggestions)
 
 ---
 
@@ -70,7 +73,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ---
 
-## **🛠️ Tech Stack**
+## **🦾 Tech Stack**
 
 ### 🌐 **Backend Technologies**
 - **Backend Framework**: Node.js with Express.js
@@ -80,7 +83,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 - **Social Media Integration**: Twitter API for posting
 
 ### **Frontend Framework**
-- React.js or any preferred frontend framework for building the dashboard and user interface.
+- React Native with expo 
 
 ---
 
@@ -101,7 +104,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 <tr>
   <td><img src="https://github.com/user-attachments/assets/69b7212d-ed57-4e2f-8843-47da87991673" alt="Camera Screen" width="250px"></td>
   <td><img src="https://github.com/user-attachments/assets/7ec49fe0-4e64-4cde-a284-b707ccd8404c" alt="Map Screen" width="250px"></td>
-  <td><img src="https://github.com/user-attachments/assets/07c5766c-b778-4544-9fb0-ad1542c6f038" alt="Dashboard Screen" width="250px"></td>
+  <td><img src="https://github.com/user-attachments/assets/dbbbe796-a30a-411a-9402-ac016b634873" alt="Dashboard Screen" width="250px"></td>
 </tr>
 <tr>
   <td><b>Camera Screen</b></td>
@@ -114,7 +117,22 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ---
 
-## **⚙️ Setup Instructions**
+## **🧩 Try the App**
+
+<div align="center">
+
+### **Want to Try the App?**
+
+Head over to the [**Releases**](https://github.com/alienx5499/Pot-Hole-Detector/releases) tab on our GitHub repository to download and install the APK for Android devices. Experience firsthand how the **Pot Hole Detector** empowers you to report potholes effortlessly!  
+**Or click the download button below:**
+
+[![Download APK](https://img.shields.io/badge/Download-APK-blue?style=flat-square&logo=android)](https://github.com/alienx5499/Pot-Hole-Detector/releases/download/v1.0.0/SpotHole.apk)
+
+</div>
+
+---
+
+## **👨‍🔧 Setup Instructions**
 
 ### **Frontend Setup**
 - **Prerequisites**
@@ -219,7 +237,7 @@ The **Pot Hole Detector** is a web application built using **Node.js** that enab
 
 ---
 
-## **🕸️ API Endpoints**
+## **📍 API Endpoints**
 
 1. **Authentication**  
    - Register new user `POST /api/v1/auth/signup`
@@ -277,7 +295,7 @@ We ❤️ open source! Contributions are welcome to make this project even bette
 	<h3>Thank you for contributing to our repository</h3><br>
 	<p align="center">
 		<a href="https://github.com/alienx5499/Pot-Hole-Detector/contributors">
-			<img src="https://contrib.rocks/image?repo=alienx5499/Pot-Hole-Detector" width="90" height="45" />
+			<img src="https://contrib.rocks/image?repo=alienx5499/POt-Hole-DetectoR" width="180" height="95" />
 		</a>
 	</p>
 </div>

@@ -1,115 +1,49 @@
-# Name of the GitHub Actions Workflow
-name: EAS Build and Release APK
+name: Build & Publish Release APK
 
-# Trigger events
 on:
   push:
     tags:
-      - 'v*.*.*'  # Trigger when tags like v1.0.0 are pushed
-  workflow_dispatch:  # Allow manual trigger from GitHub Actions
+      - 'v*.*.*'  # Trigger on version tags like v1.0.0
+  release:
+    types: [published]  # Trigger when a release is published
+  workflow_dispatch:
 
-# Define jobs
 jobs:
   build:
-    runs-on: ubuntu-latest  # Use the latest Ubuntu OS
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Repository
-      - name: Checkout Repository
-        uses: actions/checkout@v3  # Get the latest project code from the GitHub repository
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      # Step 2: Set up Node.js Environment
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
-          node-version: '18'  # Use Node.js version 18 for compatibility
+          node-version: 16
 
-      # Step 3: Install Frontend Dependencies
       - name: Install Dependencies
         run: |
-          cd App/Pot-Hole-Detector-Frontend  # Navigate to the frontend project directory
-          npm install  # Install project dependencies
+          cd App/Pot-Hole-Detector-Frontend
+          npm install
 
-      # Step 4: Install EAS CLI Globally
-      - name: Install EAS CLI
-        run: npm install -g eas-cli  # Install EAS CLI globally
+      - name: Install Expo CLI
+        run: npm install -g expo eas-cli
 
-      # Step 5: Authenticate with Expo
-      - name: Authenticate with Expo
+      - name: Login to Expo
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}  # Use the Expo authentication token from GitHub Secrets
-        run: echo "EXPO_TOKEN=$EXPO_TOKEN" >> $GITHUB_ENV  # Save the token as an environment variable
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas login --token $EXPO_TOKEN
 
-      # Step 6: Trigger EAS Build
-      - name: Trigger EAS Build
-        id: trigger_build
+      - name: Build Android APK
+        working-directory: App/Pot
+        run: eas build --platform android --profile production
+
+      - name: Rename and Move APK to Root
         run: |
-          cd App/Pot-Hole-Detector-Frontend  # Navigate to the frontend directory
-          # Trigger a build and extract the build ID
-          BUILD_OUTPUT=$(eas build --platform android --profile production --non-interactive --json)
-          echo "$BUILD_OUTPUT"  # Print the build output for debugging
-          BUILD_ID=$(echo "$BUILD_OUTPUT" | jq -r '.[0].id')  # Extracts the first build's ID
-          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV  # Save the build ID for later steps
+          mv App/Pot-Hole-Detector-Frontend/builds/*.apk ./SpotHole.apk
 
-      # Step 7: Wait for Build Completion
-      - name: Wait for Build Completion
-        run: |
-          cd App/Pot-Hole-Detector-Frontend  # Navigate to the frontend directory
-          echo "Waiting for build to complete..."  # Start waiting loop
-          while true; do
-            # Safely parse JSON response and avoid parse errors
-            BUILD_OUTPUT=$(eas build:inspect --platform android --id $BUILD_ID --json || echo "{}")
-            BUILD_STATUS=$(echo "$BUILD_OUTPUT" | jq -r '.status // "unknown"')
-
-            echo "Build Status: $BUILD_STATUS"  # Print current build status
-
-            if [[ "$BUILD_STATUS" == "finished" ]]; then
-              echo "Build completed successfully."  # Exit if the build finishes successfully
-              break
-            elif [[ "$BUILD_STATUS" == "errored" ]]; then
-              echo "Build failed."  # Exit with an error if the build fails
-              exit 1
-            elif [[ "$BUILD_STATUS" == "unknown" ]]; then
-              echo "Invalid response from EAS CLI. Retrying..."  # Handle unexpected output
-            else
-              echo "Build in progress. Waiting for 60 seconds..."  # Continue waiting
-              sleep 60
-            fi
-          done
-
-      # Step 8: Fetch Build Artifacts
-      - name: Fetch Build Artifacts
-        run: |
-          cd App/Pot-Hole-Detector-Frontend  # Navigate to the frontend directory
-          # Extract the APK URL from the build output using EAS CLI
-          BUILD_URL=$(eas build:inspect --platform android --id $BUILD_ID --json | jq -r '.artifacts.buildUrl')
-          echo "BUILD_URL=$BUILD_URL" >> $GITHUB_ENV  # Save the APK URL as an environment variable
-
-      # Step 9: Download APK File
-      - name: Download APK
-        run: wget $BUILD_URL -O PotHole-${GITHUB_REF_NAME}.apk  # Download APK with a versioned name
-
-      # Step 10: Create GitHub Release
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub authentication token
+      - name: Upload APK as a Release Asset
+        uses: actions/upload-artifact@v3
         with:
-          tag_name: ${{ github.ref }}  # Use the current tag as the release name
-          release_name: Release ${{ github.ref }}  # Name the release
-          body: |
-            Automated build for ${{ github.ref }}  # Add release notes
-          draft: false
-          prerelease: false
-
-      # Step 11: Upload APK to GitHub Release
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub authentication token
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}  # Use the created release URL
-          asset_path: ./PotHole-${GITHUB_REF_NAME}.apk  # Path to the APK file
-          asset_name: PotHole-${GITHUB_REF_NAME}.apk  # Name of the uploaded asset
-          asset_content_type: application/vnd.android.package-archive  # APK MIME type
+          name: SpotHole-APK
+          path: ./SpotHole.apk
