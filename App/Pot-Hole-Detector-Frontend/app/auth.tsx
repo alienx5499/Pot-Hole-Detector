@@ -483,7 +483,8 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: width * 0.85,
     height: height * 0.6,
-    perspective: 1000,
+    //@ts-ignore
+    perspective: 1000 ,
     alignSelf: 'center',
     marginBottom: 30,
   },

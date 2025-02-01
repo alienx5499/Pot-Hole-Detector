@@ -27,8 +27,11 @@ const Profile = () => {
     level: 'Beginner',
     rating: 0,
     email: '',
-    phone: '',
+    phone: 'N/A',
   });
+
+  // Add state to track the previous route
+  const [previousRoute, setPreviousRoute] = useState<string>('/');
 
   // Function to fetch user data from backend
   const fetchUserData = async () => {
@@ -53,7 +56,7 @@ const Profile = () => {
           level: calculateUserLevel(user.reports || 0), // Calculate level based on number of reports
           rating: user.rating || 0,
           email: user.email || '',
-          phone: user.phone || '',
+          phone: user.phone || 'N/A',
         });
 
         // Store user data in AsyncStorage
@@ -89,6 +92,27 @@ const Profile = () => {
       fetchUserData();
     }, [])
   );
+
+  // Get the previous route when component mounts
+  useEffect(() => {
+    const getPreviousRoute = async () => {
+      try {
+        const route = await AsyncStorage.getItem('previousRoute');
+        if (route) {
+          setPreviousRoute(route);
+        }
+      } catch (error) {
+        console.error('Error getting previous route:', error);
+      }
+    };
+    getPreviousRoute();
+  }, []);
+
+  // Handle close button press
+  const handleClose = () => {
+    // Navigate back to the previous route
+    router.replace(previousRoute);
+  };
 
   // Handle Logout
   const handleLogout = () => {
@@ -126,28 +150,35 @@ const Profile = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.header}>
-        <Image
-          source={{ 
-            uri: userData.profilePicture 
-          }}
-          style={styles.profileImage}
-          onError={() => {
-            setUserData(prev => ({
-              ...prev,
-              profilePicture: DEFAULT_PROFILE_PICTURE
-            }));
-          }}
-        />
-        <Text style={styles.name}>{userData.name}</Text>
+      {/* Profile Header with Close Button */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          style={styles.closeButton}
+          onPress={handleClose}
+          accessibilityLabel="Close Profile"
+        >
+          <Ionicons name="close" size={35} color="#333333" style={{ marginRight: 10 }}/>
+        </TouchableOpacity>
+        <View style={styles.header}>
+          <Image
+            source={{ uri: userData.profilePicture }}
+            style={styles.profileImage}
+            onError={() => {
+              setUserData(prev => ({
+                ...prev,
+                profilePicture: DEFAULT_PROFILE_PICTURE
+              }));
+            }}
+          />
+          <Text style={styles.name}>{userData.name}</Text>
+        </View>
       </View>
 
       {/* User Information */}
       <View style={styles.infoContainer}>
         {/* Level */}
         <View style={styles.infoRow}>
-          <Ionicons name="podium-outline" size={24} color="#007AFF" />
+          <Ionicons name="podium" size={24} color="#007AFF" />
           <View style={styles.infoTextContainer}>
             <Text style={styles.infoTitle}>Level</Text>
             <Text style={styles.infoValue}>{userData.level}</Text>
@@ -156,7 +187,7 @@ const Profile = () => {
 
         {/* Rating */}
         <View style={styles.infoRow}>
-          <Ionicons name="star-outline" size={24} color="#FFD700" />
+          <Ionicons name="star" size={24} color="#FFD700" />
           <View style={styles.infoTextContainer}>
             <Text style={styles.infoTitle}>Rating</Text>
             <View style={styles.ratingContainer}>
@@ -175,7 +206,7 @@ const Profile = () => {
 
         {/* Email */}
         <View style={styles.infoRow}>
-          <Ionicons name="mail-outline" size={24} color="#34C759" />
+          <Ionicons name="mail" size={24} color="#34C759" />
           <View style={styles.infoTextContainer}>
             <Text style={styles.infoTitle}>Email</Text>
             <Text style={styles.infoValue}>{userData.email}</Text>
@@ -184,7 +215,7 @@ const Profile = () => {
 
         {/* Phone Number */}
         <View style={styles.infoRow}>
-          <Ionicons name="call-outline" size={24} color="#FF9500" />
+          <Ionicons name="call" size={24} color="#FF9500" />
           <View style={styles.infoTextContainer}>
             <Text style={styles.infoTitle}>Phone</Text>
             <Text style={styles.infoValue}>{userData.phone}</Text>
@@ -222,33 +253,73 @@ export default Profile;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    paddingTop: 50,
     backgroundColor: '#EFEFEF', // Adjust based on theme
     flexGrow: 1,
   },
+  headerContainer: {
+    position: 'relative',
+    width: '100%',
+    marginBottom: 30,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 1,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+  },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginTop: 10,
   },
   profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#ccc', // Placeholder background
+    backgroundColor: '#ccc',
     marginBottom: 15,
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   name: {
     fontSize: 26,
     fontWeight: '700',
     color: '#333333',
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   infoContainer: {
     marginBottom: 30,
+    marginTop: 20,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    padding: 15,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+    marginHorizontal: 15,
   },
   infoTextContainer: {
     marginLeft: 15,
@@ -279,13 +350,21 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     backgroundColor: '#007AFF',
-    paddingVertical: 12,
+    paddingVertical: 15,
     paddingHorizontal: 25,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 15,
     width: '80%',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonText: {
     color: '#FFFFFF',

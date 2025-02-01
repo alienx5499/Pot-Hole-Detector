@@ -1,22 +1,46 @@
 import React, { useEffect, useState  } from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useNavigation } from "expo-router";
+import { Text, View, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
+import { useNavigation, useRouter, usePathname } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import GuestConversionModal from '../components/GuestConversionModal';
 import { useFocusEffect } from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
+import { Ionicons } from "@expo/vector-icons";
+import GuestConversionModal from "../components/GuestConversionModal";
+import BottomNav from "../components/BottomNav";
 
 
 export default function Index() {
   const navigation = useNavigation();
   const router = useRouter();
+  const pathname = usePathname();
   const [showConversionModal, setShowConversionModal] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
+  const [counter, setCounter] = useState(0);
 
   useEffect(() => {
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    const targetNumber = 1000;
+    const duration = 3;
+    const steps = 100;
+    const increment = targetNumber / steps;
+    const intervalTime = duration / steps;
+
+    let currentCount = 0;
+    const timer = setInterval(() => {
+      currentCount += increment;
+      if (currentCount >= targetNumber) {
+        setCounter(targetNumber);
+        clearInterval(timer);
+      } else {
+        setCounter(Math.floor(currentCount));
+      }
+    }, intervalTime);
+
+    return () => clearInterval(timer);
   }, []);
 
   useFocusEffect(
@@ -89,190 +113,232 @@ export default function Index() {
     debugStorage();
   }, []);
 
-  return (
-    <LinearGradient
-      // gradient
-      colors={["#0f2027", "#203a43", "#2c5364"]}
-      style={styles.gradientContainer}
-    >
-      <View style={styles.container}>
-        <Image
-          source={require('../../assets/images/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+  const isActive = (path: string) => pathname === path;
 
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Home</Text>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => router.push('/profile')}
+        >
+          <Ionicons 
+            name="person-circle" 
+            size={52} 
+            color="#333" 
+          />
+        </TouchableOpacity>
+      </View>
+
+      <BottomNav />
+
+      <View style={styles.mainContent}>
         <View style={styles.contentCard}>
           <Text style={styles.title}>Welcome</Text>
           <Text style={styles.tagline}>Empowering Safer Roads</Text>
 
-          <Text style={styles.description}>
-            Quickly identify and report road imperfections. Take a photo,
-            help pave the way to safer, smoother journeys, and make a difference
-            in your community.
-          </Text>
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.counterText}>
+              {counter}+
+            </Text>
+            <Text style={styles.counterLabel}>
+              Potholes Reported
+            </Text>
+            <Text style={styles.description}>
+              Quickly identify and report road imperfections. Take a photo,
+              help pave the way to safer, smoother journeys, and make a difference
+              in your community.
+            </Text>
+          </View>
 
-          {/* Take a Photo Button */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.ctaButtonContainer}
-            onPress={handleCameraPress}
-          >
-            <LinearGradient
-              colors={["#ffd200", "#ffa300"]}
-              style={styles.ctaButton}
+          {/* <View style={styles.buttonGroup}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleCameraPress}
             >
-              <Text style={styles.ctaButtonText}>Take a Photo</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <Ionicons name="camera" size={24} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.actionButtonText}>Take Photo</Text>
+            </TouchableOpacity>
 
-          {/* View Dashboard Button */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.ctaButtonContainer}
-            onPress={handleDashboardPress}
-          >
-            <LinearGradient
-              colors={["#ffd200", "#ffa300"]}
-              style={styles.ctaButton}
+            <TouchableOpacity
+              style={[styles.actionButton, styles.dashboardButton]}
+              onPress={handleDashboardPress}
             >
-              <Text style={styles.ctaButtonText}>View Dashboard</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.ctaButtonContainer}
-            onPress={handleLogout}
-          >
-            <LinearGradient
-              colors={["#ffd200", "#ffa300"]}
-              style={styles.ctaButton}
-            >
-              <Text style={styles.ctaButtonText}>Logout</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <Ionicons name="stats-chart" size={24} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.actionButtonText}>Dashboard</Text>
+            </TouchableOpacity>
+          </View> */}
         </View>
 
-        <Text style={styles.footer}>Together, let's improve our roads.</Text>
-
-        {isGuest && (
-          <TouchableOpacity
-            style={styles.conversionPrompt}
-            onPress={() => setShowConversionModal(true)}
-          >
-            <Text style={styles.conversionText}>
-              Create an account to save your data
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        <GuestConversionModal
-          visible={showConversionModal}
-          onClose={() => setShowConversionModal(false)}
-          onSuccess={handleConversionSuccess}
-        />
+        
       </View>
-    </LinearGradient>
+
+      {isGuest && (
+        <TouchableOpacity
+          style={styles.conversionPrompt}
+          onPress={() => setShowConversionModal(true)}
+        >
+          <Ionicons name="person-add" size={20} color="#fff" style={styles.conversionIcon} />
+          <Text style={styles.conversionText}>
+            Create an account to save your data
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <GuestConversionModal
+        visible={showConversionModal}
+        onClose={() => setShowConversionModal(false)}
+        onSuccess={handleConversionSuccess}
+      />
+      <Text style={styles.footer}>Together, let's improve our roads.</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-    alignItems: "center",
-    justifyContent: "flex-start",
+    backgroundColor: '#f8f9fa',
   },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 30,
+  headerContainer: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingHorizontal: 16,
+  },
+  headerTitle: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#333',
+    letterSpacing: 0.5,
+    paddingLeft: 10,
+  },
+  profileButton: {
+    padding: 5,
+    marginRight: 1,
+  },
+  mainContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 24,
   },
   contentCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 20,
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-    width: "100%",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 10,
-    marginBottom: 30,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 4,
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 1,
   },
   tagline: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#f0f0f0",
-    marginBottom: 20,
-    textAlign: "center",
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  descriptionContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
   },
   description: {
-    fontSize: 15,
-    color: "#f0f0f0",
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 40,
+    fontSize: 16,
+    color: '#4a4a4a',
+    textAlign: 'center',
+    lineHeight: 24,
+    letterSpacing: 0.3,
   },
-  ctaButtonContainer: {
-    width: "100%",
-    alignItems: "center",
-    marginTop: 10, // Space between buttons
+  buttonGroup: {
+    gap: 16,
   },
-  ctaButton: {
-    borderRadius: 30,
-    paddingVertical: 14,
-    paddingHorizontal: 30,
-    elevation: 3,
-    width: "70%",
-    shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
+  actionButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  ctaButtonText: {
-    color: "#1E3C72",
+  dashboardButton: {
+    backgroundColor: '#34C759',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  actionButtonText: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-    letterSpacing: 1.1,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   footer: {
-    fontSize: 14,
-    color: "#d0d0d0",
-    textAlign: "center",
-    marginTop: "auto",
-    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 135,
+    letterSpacing: 0.5,
   },
   conversionPrompt: {
     position: 'absolute',
-    bottom: 20,
-    backgroundColor: 'rgba(74, 144, 226, 0.9)',
-    padding: 15,
-    borderRadius: 25,
-    alignSelf: 'center',
+    bottom: 170,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 122, 255, 0.95)',
+    padding: 16,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  conversionIcon: {
+    marginRight: 8,
   },
   conversionText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  counterText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  counterLabel: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
   },
 });

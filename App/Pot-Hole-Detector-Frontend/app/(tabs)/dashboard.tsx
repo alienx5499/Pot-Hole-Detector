@@ -12,6 +12,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -21,6 +22,7 @@ import LottieView from 'lottie-react-native';
 import loadingAnimation from '../../assets/animations/dashboardLoader.json'; // Adjust the path as needed
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import BottomNav from "../components/BottomNav";
 
 // Add new interfaces
 interface DashboardData {
@@ -178,10 +180,6 @@ export default function Dashboard() {
   // Render Item for Recent Detections
   const renderRecentDetection = ({ item }: { item: any }) => (
     <View style={styles.recentItem}>
-      <View style={styles.recentInfo}>
-        <Text style={styles.recentLocation}>{item.location}</Text>
-        <Text style={styles.recentDate}>{item.date}</Text>
-      </View>
       <View style={styles.reporterInfo}>
         <Ionicons name="person-circle-outline" size={24} color="#333" />
         <Text style={styles.reporterName}>{item.reporter}</Text>
@@ -189,17 +187,33 @@ export default function Dashboard() {
           <Text style={styles.levelText}>L{item.level}</Text>
         </View>
       </View>
+      <View style={styles.recentInfo}>
+        <Text style={styles.recentLocation}>{item.location}</Text>
+        <Text style={styles.recentDate}>{item.date}</Text>
+      </View>
     </View>
   );
  
   const ListHeader = () => (
     <>
       {/* Header */}
-      <Text style={styles.header}>Dashboard</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Dashboard</Text>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={handleProfilePress}
+        >
+          <Ionicons 
+            name="person-circle" 
+            size={52} 
+            color="#333" 
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Total Potholes */}
-      <LinearGradient colors={['#FF7E5F', '#FEB47B']} style={styles.card}>
-        <Text style={styles.cardTitle}>Total Potholes Detected</Text>
+      <LinearGradient colors={['#7F0012','#3B070A' ]} style={styles.card}>
+        <Text style={[styles.cardTitle, {color: '#FFFFFF'}]}>Total Potholes Detected</Text>
         <Text style={styles.cardNumber}>{totalPotholes}</Text>
       </LinearGradient>
 
@@ -245,7 +259,7 @@ export default function Dashboard() {
         )}
       </View>
 
-      <View style={styles.card}>
+      <View style={[styles.card, {marginBottom: 50}]}>
         <Text style={styles.cardTitle}>Report Confidence Distribution</Text>
         {pieData.length > 0 ? (
           <PieChart
@@ -267,14 +281,28 @@ export default function Dashboard() {
       </View>
 
       {/* Recent Detections Header */}
-      <View style={styles.recentHeader}>
-        <Text style={styles.recentHeaderText}>Recent Detections</Text>
+      <View> 
+        <View style={styles.recentHeader}>
+          <Text style={styles.recentHeaderText}>Recent Detections</Text>
+        </View>
       </View>
     </>
   );
 
+  const handleProfilePress = async () => {
+    try {
+      // Store the current route
+      await AsyncStorage.setItem('previousRoute', '/dashboard'); // or whatever the current route is
+      // Navigate to profile
+      router.push('/profile');
+    } catch (error) {
+      console.error('Error storing previous route:', error);
+      router.push('/profile');
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
       {loading ? (
         <View style={styles.loadingContainer}>
           <LottieView
@@ -329,11 +357,16 @@ export default function Dashboard() {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+      <BottomNav />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#EFEFEF',
@@ -359,19 +392,35 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     alignItems: 'center',
   },
-  header: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 20,
+  headerContainer: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    // paddingHorizontal: 24,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 36,
+    fontWeight: '800',
     color: '#333',
-    textAlign: 'center',
+    letterSpacing: 0.5,
+    paddingLeft: 10,
+  },
+  profileButton: {
+    padding: 4,  // Add touch padding
+    marginLeft: 8,
   },
   card: {
     width: screenWidth * 0.9,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 30,
     shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 3 },
@@ -391,12 +440,13 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
     alignItems: 'center',
+    marginBottom: 20,
   },
   cardTitle: {
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 12,
-    color: '#333',
+    color: '#000000',
     textAlign: 'center',
   },
   cardNumber: {
@@ -420,25 +470,19 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#FF7E5F',
     borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
     elevation: 3,
     alignItems: 'center',
+    textAlign: 'center', 
   },
   recentHeaderText: {
-    fontSize: 22,
+    fontSize: 36,
     fontWeight: '600',
-    color: '#fff',
+    color: 'black',
     textAlign: 'center',
   },
   recentItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomColor: '#EEE',
@@ -447,11 +491,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
     width: '100%',
+  },
+  reporterInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingBottom: 8, 
+    marginBottom: 2,
+  },
+  reporterName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginLeft: 6,
+    flex: 1,
   },
   recentInfo: {
-    flex: 1,
-    paddingRight: 10,
+    paddingTop: 4,
   },
   recentLocation: {
     fontSize: 18,
@@ -463,21 +518,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     color: '#999',
-    marginTop: 4,
-  },
-  reporterInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  reporterName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginLeft: 6,
+    marginTop: 1,
+    textAlign: 'right',
   },
   levelBadge: {
-    marginLeft: 8,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,

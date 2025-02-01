@@ -344,8 +344,9 @@ export default function Maps() {
               <View
                 style={[
                   styles.confidenceBar,
+                  //@ts-ignore
                   {
-                    width: `${(result.confidence * 100).toFixed(1)}%`,
+                    width: Number((result.confidence * 100).toFixed(1)) + '%',
                     backgroundColor: getConfidenceColor(result.confidence),
                   },
                 ]}
