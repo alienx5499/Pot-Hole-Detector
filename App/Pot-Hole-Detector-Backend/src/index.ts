@@ -24,6 +24,11 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/pothole', potholeRouter);
 
+app.get('/', (req, res) => {
+  res.send('Pot Hole Detector Backend');
+});
+
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

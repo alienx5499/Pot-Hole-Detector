@@ -19,7 +19,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.spothole",
+      "bundleIdentifier": "com.akshatcode21.myapp",
       "config": {
         "googleMapsApiKey": "AIzaSyAflTUatLA2jnfY7ZRDESH3WmbVrmj2Vyg"
       }

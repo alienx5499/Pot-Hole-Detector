@@ -24,6 +24,7 @@ import processingAnimation from '../../assets/animations/imageDetect.json';
 import camLoaderAnimation from '../../assets/animations/cameraLoader.json';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BottomNav from "../components/BottomNav";
 
 const ROBOFLOW_API_URL = "https://detect.roboflow.com/potholes-detection-qwkkc/5";
 const ROBOFLOW_API_KEY = "06CdohBqfvMermFXu3tL";
@@ -301,36 +302,67 @@ export default function Camera() {
   }
 
   return (
-    <View style={styles.container}>
-      <Animated.View style={{ ...styles.header, opacity: fadeAnim }}>
-        <Ionicons name="camera" size={100} color="#fff" />
-        <Text style={styles.title}>Capture or Select Pothole</Text>
-      </Animated.View>
+    <View style={[styles.container]}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Camera</Text>
+      </View>
 
       {!image ? (
-        <Animated.View style={{ ...styles.actionButtons, opacity: fadeAnim }}>
-          <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-            <Ionicons name="camera-outline" size={30} color="#fff" />
-            <Text style={styles.captureButtonText}>Take Photo</Text>
-          </TouchableOpacity>
+        <Animated.View style={[styles.mainContent, { opacity: fadeAnim }]}>
+          <View style={styles.centerContent}>
+            <View style={styles.contentCard}>
+              <Text style={styles.title}>Capture or {'\n'} Upload Photo</Text>
+              <Text style={styles.tagline}>Help identify road hazards</Text>
+            </View>
+            
+            <View style={styles.actionButtons}>
+              <TouchableOpacity 
+                style={styles.actionButton} 
+                onPress={takePhoto}
+              >
+                <View style={[styles.iconContainer, styles.cameraContainer]}>
+                  <LinearGradient
+                    colors={['#4A90E2', '#007AFF']}
+                    style={styles.iconGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="camera-outline" size={44} color="#fff" />
+                  </LinearGradient>
+                </View>
+                <Text style={styles.actionButtonText}>Take Photo</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={styles.galleryButton} onPress={pickImageFromGallery}>
-            <Ionicons name="image-outline" size={30} color="#fff" />
-            <Text style={styles.captureButtonText}>Gallery</Text>
-          </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton} 
+                onPress={pickImageFromGallery}
+              >
+                <View style={[styles.iconContainer, styles.galleryContainer]}>
+                  <LinearGradient
+                    colors={['#34C759', '#32CD32']}
+                    style={styles.iconGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="images-outline" size={44} color="#fff" />
+                  </LinearGradient>
+                </View>
+                <Text style={styles.actionButtonText}>Gallery</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </Animated.View>
       ) : (
         <View style={styles.previewContainer}>
           <Image source={{ uri: image }} style={styles.previewImage} />
-
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
-              <Ionicons name="refresh-circle-outline" size={24} color="#fff" />
+              <Ionicons name="refresh-outline" size={24} color="#fff" />
               <Text style={styles.buttonText}>Retake</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.confirmButton} onPress={detectPothole}>
-              <Ionicons name="checkmark-circle-outline" size={24} color="#fff" />
+              <Ionicons name="checkmark-outline" size={24} color="#fff" />
               <Text style={styles.buttonText}>Confirm</Text>
             </TouchableOpacity>
           </View>
@@ -340,13 +372,14 @@ export default function Camera() {
       {isProcessing && (
         <View style={styles.uploadingOverlay}>
           <LottieView
-            source={processingAnimation} // loader animation during processing
+            source={processingAnimation}
             autoPlay
             loop
             style={styles.processingLottie}
           />
         </View>
       )}
+      <BottomNav />
     </View>
   );
 }
@@ -361,140 +394,156 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
   },
-  processingLottie: {
-    width: 300, // Restored to original size
-    height: 300, // Restored to original size
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 30,
+    backgroundColor: '#f8f9fa',
   },
-  header: {
-    width: '100%',
-    paddingVertical: 30,
-    borderRadius: 20,
+  headerContainer: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingHorizontal: 16,
+  },
+  headerTitle: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#333',
+    letterSpacing: 0.5,
+    paddingLeft: 10,
+  },
+  mainContent: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: '#2575fc',
-    marginBottom: 30,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    gap: 20,
+  },
+  centerContent: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: -50,
+  },
+  contentCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 34,
+    width: '100%',
   },
   title: {
-    fontSize: 26,
-    color: '#fff',
+    fontSize: 32,
     fontWeight: '800',
-    marginTop: 15,
+    color: '#1a1a1a',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  tagline: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
     textAlign: 'center',
   },
   actionButtons: {
+    width: '100%',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
+    justifyContent: 'space-around',
+    paddingHorizontal: 10,
+    marginTop: 20,
   },
-  captureButton: {
-    flex: 1,
-    backgroundColor: '#FF6F61',
-    paddingVertical: 20,
-    marginRight: 10,
-    borderRadius: 30,
+  actionButton: {
     alignItems: 'center',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#FF6F61',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
+    width: 150,
   },
-  galleryButton: {
-    flex: 1,
-    backgroundColor: '#4CA1AF',
-    paddingVertical: 20,
-    marginLeft: 10,
-    borderRadius: 30,
+  iconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: 'center',
-    flexDirection: 'column',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#4CA1AF',
-    shadowOpacity: 0.3,
+    marginBottom: 12,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
   },
-  captureButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 10,
+  iconGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraContainer: {
+    backgroundColor: '#4A90E2',
+  },
+  galleryContainer: {
+    backgroundColor: '#34C759',
+  },
+  actionButtonText: {
+    fontSize: 18,
+    color: '#001524',
     fontWeight: '600',
+    marginTop: 8,
   },
   previewContainer: {
-    width: '90%',
-    alignItems: 'center',
+    flex: 1,
+    width: '100%',
+    padding: 20,
   },
   previewImage: {
     width: '100%',
-    height: height * 0.5,
-    borderRadius: 20,
+    height: '80%',
+    borderRadius: 15,
     marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#ddd',
   },
   buttonContainer: {
     flexDirection: 'row',
-    width: '100%',
     justifyContent: 'space-between',
+    paddingHorizontal: 20,
   },
   retakeButton: {
     flex: 1,
-    backgroundColor: '#FF8C00',
-    paddingVertical: 15,
-    marginRight: 10,
-    borderRadius: 30,
-    alignItems: 'center',
     flexDirection: 'row',
+    backgroundColor: '#FF3B30',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#FF8C00',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
+    marginRight: 10,
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: '#32CD32',
-    paddingVertical: 15,
-    marginLeft: 10,
-    borderRadius: 30,
-    alignItems: 'center',
     flexDirection: 'row',
+    backgroundColor: '#34C759',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#32CD32',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
+    marginLeft: 10,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    marginLeft: 8,
     fontWeight: '600',
+    marginLeft: 8,
   },
   uploadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    backgroundColor: 'rgba(240, 244, 247, 0.8)',
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(245, 245, 245, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  processingLottie: {
+    width: 200,
+    height: 200,
   },
 });
