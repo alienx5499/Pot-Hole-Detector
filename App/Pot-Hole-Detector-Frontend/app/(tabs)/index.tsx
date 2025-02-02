@@ -31,13 +31,14 @@ export default function Index() {
   useEffect(() => {
     const fetchTarget = async () => {
       const response = await fetch(
-        "https://pothole-detection-backend.onrender.com/api/v1/potholes/total-reports"
+        "https://pothole-detection-backend.onrender.com/api/v1/total-reports"
       );
       const data = await response.json();
       return data.totalReports;
     };
     const fetchAndAnimate = async () => {
       const targetNumber = await fetchTarget();
+      console.log(targetNumber);
       const duration = 3;
       const steps = 100;
       const increment = targetNumber / steps;
