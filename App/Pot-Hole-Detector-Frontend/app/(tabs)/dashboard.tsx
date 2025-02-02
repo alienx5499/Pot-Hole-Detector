@@ -314,48 +314,52 @@ export default function Dashboard() {
           <Text style={styles.loadingText}>Loading Dashboard...</Text>
         </View>
       ) : (
-        <FlatList
-          data={recentDetections}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderRecentDetection}
-          ListHeaderComponent={ListHeader}
-          ListFooterComponent={
-            <>
-              {/* Map with Pothole Locations */}
-              <View style={styles.mapCard}>
-                <Text style={styles.cardTitle}>Pothole Locations in India</Text>
-                {mapMarkers.length > 0 ? (
-                  <MapView
-                    style={styles.map}
-                    initialRegion={{
-                      latitude: 20.5937,
-                      longitude: 78.9629,
-                      latitudeDelta: 30,
-                      longitudeDelta: 30,
-                    }}
-                  >
-                    {mapMarkers.map((marker: MapMarker) => (
-                      <Marker
-                        key={marker.id}
-                        coordinate={{
-                          latitude: marker.latitude,
-                          longitude: marker.longitude,
-                        }}
-                        title={marker.title}
-                      />
-                    ))}
-                  </MapView>
-                ) : (
-                  <View style={[styles.map, styles.noMapData]}>
-                    <Text style={styles.noMapDataText}>No pothole locations to display</Text>
-                  </View>
-                )}
-              </View>
-            </>
-          }
-          contentContainerStyle={styles.flatListContent}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.contentContainer}>
+          <FlatList
+            data={recentDetections}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderRecentDetection}
+            ListHeaderComponent={ListHeader}
+            ListFooterComponent={
+              <>
+                {/* Map with Pothole Locations */}
+                <View style={styles.mapCard}>
+                  <Text style={styles.cardTitle}>Pothole Locations in India</Text>
+                  {mapMarkers.length > 0 ? (
+                    <MapView
+                      style={styles.map}
+                      initialRegion={{
+                        latitude: 20.5937,
+                        longitude: 78.9629,
+                        latitudeDelta: 30,
+                        longitudeDelta: 30,
+                      }}
+                    >
+                      {mapMarkers.map((marker: MapMarker) => (
+                        <Marker
+                          key={marker.id}
+                          coordinate={{
+                            latitude: marker.latitude,
+                            longitude: marker.longitude,
+                          }}
+                          title={marker.title}
+                        />
+                      ))}
+                    </MapView>
+                  ) : (
+                    <View style={[styles.map, styles.noMapData]}>
+                      <Text style={styles.noMapDataText}>No pothole locations to display</Text>
+                    </View>
+                  )}
+                </View>
+                {/* Add bottom padding to account for BottomNav */}
+                <View style={{ height: 80 }} />
+              </>
+            }
+            contentContainerStyle={styles.flatListContent}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
       )}
       <BottomNav />
     </View>
@@ -366,6 +370,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  contentContainer: {
+    flex: 1,
   },
   safeArea: {
     flex: 1,
