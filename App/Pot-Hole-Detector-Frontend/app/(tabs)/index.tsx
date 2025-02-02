@@ -31,7 +31,7 @@ export default function Index() {
   useEffect(() => {
     const fetchTarget = async () => {
       const response = await fetch(
-        "https://pothole-detection-backend.onrender.com/total-reports"
+        "https://pot-hole-detector.onrender.com/total-reports"
       );
       const data = await response.json();
       return data.totalReports;
