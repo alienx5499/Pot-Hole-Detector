@@ -1,14 +1,20 @@
-import React, { useEffect, useState  } from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from "react-native";
 import { useNavigation, useRouter, usePathname } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-import LottieView from 'lottie-react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import LottieView from "lottie-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import GuestConversionModal from "../components/GuestConversionModal";
 import BottomNav from "../components/BottomNav";
-
 
 export default function Index() {
   const navigation = useNavigation();
@@ -23,42 +29,53 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const targetNumber = 1000;
-    const duration = 3;
-    const steps = 100;
-    const increment = targetNumber / steps;
-    const intervalTime = duration / steps;
+    const fetchTarget = async () => {
+      const response = await fetch(
+        "https://pothole-detection-backend.onrender.com/api/v1/potholes/total-reports"
+      );
+      const data = await response.json();
+      return data.totalReports;
+    };
+    const fetchAndAnimate = async () => {
+      const targetNumber = await fetchTarget();
+      const duration = 3;
+      const steps = 100;
+      const increment = targetNumber / steps;
+      const intervalTime = duration / steps;
 
-    let currentCount = 0;
-    const timer = setInterval(() => {
-      currentCount += increment;
-      if (currentCount >= targetNumber) {
-        setCounter(targetNumber);
-        clearInterval(timer);
-      } else {
-        setCounter(Math.floor(currentCount));
-      }
-    }, intervalTime);
+      let currentCount = 0;
+      const timer = setInterval(() => {
+        currentCount += increment;
+        if (currentCount >= targetNumber) {
+          setCounter(targetNumber);
+          clearInterval(timer);
+        } else {
+          setCounter(Math.floor(currentCount));
+        }
+      }, intervalTime);
 
-    return () => clearInterval(timer);
+      return () => clearInterval(timer);
+    };
+
+    fetchAndAnimate();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
       const checkGuestStatus = async () => {
         try {
-          const token = await AsyncStorage.getItem('userToken');
+          const token = await AsyncStorage.getItem("userToken");
           if (!token) {
-            await AsyncStorage.removeItem('isGuest');
-            router.replace('/auth');
+            await AsyncStorage.removeItem("isGuest");
+            router.replace("/auth");
             return;
           }
 
-          const isGuestUser = await AsyncStorage.getItem('isGuest');
+          const isGuestUser = await AsyncStorage.getItem("isGuest");
 
-          setIsGuest(isGuestUser === 'true');
+          setIsGuest(isGuestUser === "true");
         } catch (error) {
-          console.error('Error checking guest status:', error);
+          console.error("Error checking guest status:", error);
           setIsGuest(false);
         }
       };
@@ -68,22 +85,22 @@ export default function Index() {
 
   const checkAuth = async () => {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem("userToken");
       if (!token) {
-        router.replace('/auth');
+        router.replace("/auth");
       }
     } catch (error) {
-      console.error('Error checking auth:', error);
-      router.replace('/auth');
+      console.error("Error checking auth:", error);
+      router.replace("/auth");
     }
   };
 
   const handleLogout = async () => {
     try {
       await AsyncStorage.clear();
-      router.replace('/auth');
+      router.replace("/auth");
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error("Error logging out:", error);
     }
   };
 
@@ -97,11 +114,11 @@ export default function Index() {
 
   const handleConversionSuccess = async () => {
     try {
-      await AsyncStorage.setItem('isGuest', 'false');
+      await AsyncStorage.setItem("isGuest", "false");
       setShowConversionModal(false);
       setIsGuest(false);
     } catch (error) {
-      console.error('Error updating guest status:', error);
+      console.error("Error updating guest status:", error);
     }
   };
 
@@ -119,15 +136,11 @@ export default function Index() {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Home</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.profileButton}
-          onPress={() => router.push('/profile')}
+          onPress={() => router.push("/profile")}
         >
-          <Ionicons 
-            name="person-circle" 
-            size={52} 
-            color="#333" 
-          />
+          <Ionicons name="person-circle" size={52} color="#333" />
         </TouchableOpacity>
       </View>
 
@@ -139,16 +152,12 @@ export default function Index() {
           <Text style={styles.tagline}>Empowering Safer Roads</Text>
 
           <View style={styles.descriptionContainer}>
-            <Text style={styles.counterText}>
-              {counter}+
-            </Text>
-            <Text style={styles.counterLabel}>
-              Potholes Reported
-            </Text>
+            <Text style={styles.counterText}>{counter}+</Text>
+            <Text style={styles.counterLabel}>Potholes Reported</Text>
             <Text style={styles.description}>
-              Quickly identify and report road imperfections. Take a photo,
-              help pave the way to safer, smoother journeys, and make a difference
-              in your community.
+              Quickly identify and report road imperfections. Take a photo, help
+              pave the way to safer, smoother journeys, and make a difference in
+              your community.
             </Text>
           </View>
 
@@ -170,8 +179,6 @@ export default function Index() {
             </TouchableOpacity>
           </View> */}
         </View>
-
-        
       </View>
 
       {isGuest && (
@@ -179,7 +186,12 @@ export default function Index() {
           style={styles.conversionPrompt}
           onPress={() => setShowConversionModal(true)}
         >
-          <Ionicons name="person-add" size={20} color="#fff" style={styles.conversionIcon} />
+          <Ionicons
+            name="person-add"
+            size={20}
+            color="#fff"
+            style={styles.conversionIcon}
+          />
           <Text style={styles.conversionText}>
             Create an account to save your data
           </Text>
@@ -199,23 +211,23 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
   },
   headerContainer: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingTop: Platform.OS === "ios" ? 50 : 20,
     paddingBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
     paddingHorizontal: 16,
   },
   headerTitle: {
     fontSize: 36,
-    fontWeight: '800',
-    color: '#333',
+    fontWeight: "800",
+    color: "#333",
     letterSpacing: 0.5,
     paddingLeft: 10,
   },
@@ -229,10 +241,10 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   contentCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -241,29 +253,29 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '800',
-    color: '#1a1a1a',
+    fontWeight: "800",
+    color: "#1a1a1a",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: 1,
   },
   tagline: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#666",
+    textAlign: "center",
     marginBottom: 24,
   },
   descriptionContainer: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
   },
   description: {
     fontSize: 16,
-    color: '#4a4a4a',
-    textAlign: 'center',
+    color: "#4a4a4a",
+    textAlign: "center",
     lineHeight: 24,
     letterSpacing: 0.3,
   },
@@ -271,49 +283,49 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   actionButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     borderRadius: 16,
     paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   dashboardButton: {
-    backgroundColor: '#34C759',
+    backgroundColor: "#34C759",
   },
   buttonIcon: {
     marginRight: 8,
   },
   actionButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.5,
   },
   footer: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 135,
     letterSpacing: 0.5,
   },
   conversionPrompt: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 170,
     left: 16,
     right: 16,
-    backgroundColor: 'rgba(0, 122, 255, 0.95)',
+    backgroundColor: "rgba(0, 122, 255, 0.95)",
     padding: 16,
     borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -323,22 +335,22 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   conversionText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.3,
   },
   counterText: {
     fontSize: 48,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#007AFF",
+    textAlign: "center",
     marginBottom: 8,
   },
   counterLabel: {
     fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 30,
   },
 });
