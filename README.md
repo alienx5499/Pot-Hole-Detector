@@ -24,7 +24,7 @@
 
 ## **📱 What is Pot Hole Detector?**
 
-The **Pot Hole Detector** is a web application built using **Node.js** that enables users to:
+The **Pot Hole Detector** is an application built using **React Native** that enables users to:
 - Capture and report potholes with precise location tagging.
 - Automatically share pothole information on **Twitter** to raise awareness.
 - Keep track of reported potholes in a user-friendly dashboard.
