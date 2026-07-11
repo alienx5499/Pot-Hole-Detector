@@ -12,9 +12,11 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
@@ -62,6 +64,34 @@ export default function Maps() {
   useEffect(() => {
     checkAuthAndInitialize();
   }, []);
+
+  // Share the pothole report via the native share sheet (SMS, WhatsApp, email, etc.)
+  const handleShare = async () => {
+    try {
+      const confidence = aiResults?.[0]?.confidence != null
+        ? ` (${(aiResults[0].confidence * 100).toFixed(1)}% confidence)`
+        : '';
+      const locationLine = address
+        ? `Location: ${address}`
+        : potholeLocation
+          ? `Location: ${potholeLocation.latitude}, ${potholeLocation.longitude}`
+          : '';
+      const mapsLink = potholeLocation
+        ? `\nhttps://www.google.com/maps/search/?api=1&query=${potholeLocation.latitude},${potholeLocation.longitude}`
+        : '';
+
+      const message = `🚨 Pothole reported${confidence}!\n${locationLine}${mapsLink}\n\nShared via SpotHole`;
+
+      const result = await Share.share({ message });
+
+      if (result.action === Share.sharedAction) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', 'Unable to share this report.');
+    }
+  };
 
   // Check authentication and initialize location + data
   const checkAuthAndInitialize = async () => {
@@ -528,6 +558,11 @@ export default function Maps() {
               color="#1DA1F2"
             />
           </View>
+
+          <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+            <Ionicons name="share-social-outline" size={20} color="#fff" />
+            <Text style={styles.shareButtonText}>Share Report</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -753,6 +788,26 @@ const styles = StyleSheet.create({
   checkbox: {
     marginRight: 12,
     borderRadius: 4,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  shareButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   twitterTextContainer: {
     flex: 1,
