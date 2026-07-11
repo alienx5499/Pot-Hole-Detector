@@ -23,6 +23,7 @@ import LottieView from 'lottie-react-native';
 import processingAnimation from '../../assets/animations/imageDetect.json';
 import camLoaderAnimation from '../../assets/animations/cameraLoader.json';
 import * as Location from 'expo-location';
+import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNav from "../components/BottomNav";
 
@@ -151,6 +152,24 @@ export default function Camera() {
     } catch (error) {
       console.error('Error fetching address:', error);
       return 'Address not found';
+    }
+  };
+
+  const saveToGallery = async (uri: string) => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Photo library access is needed to save the pothole image.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert('Saved', 'Pothole image saved to your gallery.');
+    } catch (error) {
+      Alert.alert('Error', 'Unable to save the image to your gallery.');
     }
   };
 
@@ -361,6 +380,14 @@ export default function Camera() {
               <Text style={styles.buttonText}>Retake</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={() => image && saveToGallery(image)}
+            >
+              <Ionicons name="download-outline" size={24} color="#fff" />
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.confirmButton} onPress={detectPothole}>
               <Ionicons name="checkmark-outline" size={24} color="#fff" />
               <Text style={styles.buttonText}>Confirm</Text>
@@ -519,6 +546,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
+  },
+  saveButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 6,
   },
   confirmButton: {
     flex: 1,
